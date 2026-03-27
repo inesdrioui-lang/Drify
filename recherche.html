@@ -372,7 +372,7 @@
       <option value="rent">Location</option>
       <option value="sale">Vente</option>
     </select>
-    <input type="text" id="searchInput" placeholder="Ville, quartier, code postal…" value="Paris" />
+    <input type="text" id="searchInput" placeholder="Ville, quartier, code postal…" value="Toulouse" />
     <button onclick="applyFilters()">Rechercher</button>
   </div>
   <div class="topbar-right">
@@ -511,18 +511,18 @@
 <script>
 // ─── DATA (mock — remplacé par Supabase en phase 2)
 const LISTINGS = [
-  { id:1, title:"Appartement Haussmannien", type:"apartment", city:"Paris 9e", lat:48.878, lng:2.340, price:1450, charges:80, surface:65, rooms:3, bedrooms:2, furnished:false, dpe:"C", badge:"Location", img:"#EDE5DA" },
-  { id:2, title:"Studio meublé — Marais", type:"studio", city:"Paris 4e", lat:48.855, lng:2.354, price:950, charges:60, surface:28, rooms:1, bedrooms:0, furnished:true, dpe:"D", badge:"Location", img:"#E8DDD0" },
-  { id:3, title:"T3 lumineux — Montmartre", type:"apartment", city:"Paris 18e", lat:48.886, lng:2.341, price:1680, charges:120, surface:72, rooms:3, bedrooms:2, furnished:false, dpe:"B", badge:"Location", img:"#F0E8DE" },
-  { id:4, title:"Loft industriel — Oberkampf", type:"loft", city:"Paris 11e", lat:48.864, lng:2.374, price:2100, charges:150, surface:95, rooms:4, bedrooms:2, furnished:true, dpe:"C", badge:"Location", img:"#E5DCD2" },
-  { id:5, title:"Studio calme — Bastille", type:"studio", city:"Paris 12e", lat:48.853, lng:2.369, price:820, charges:50, surface:24, rooms:1, bedrooms:0, furnished:true, dpe:"E", badge:"Location", img:"#EDE2D4" },
-  { id:6, title:"Maison avec jardin", type:"house", city:"Vincennes", lat:48.848, lng:2.438, price:2800, charges:0, surface:120, rooms:5, bedrooms:4, furnished:false, dpe:"C", badge:"Location", img:"#E9E0D5" },
-  { id:7, title:"T2 rénové — République", type:"apartment", city:"Paris 10e", lat:48.867, lng:2.363, price:1250, charges:90, surface:45, rooms:2, bedrooms:1, furnished:false, dpe:"D", badge:"Location", img:"#F2EAE0" },
-  { id:8, title:"Chambre meublée — Châtelet", type:"room", city:"Paris 1er", lat:48.861, lng:2.346, price:680, charges:40, surface:14, rooms:1, bedrooms:1, furnished:true, dpe:"F", badge:"Location", img:"#E8DDD0" },
-  { id:9, title:"T4 familial — Nation", type:"apartment", city:"Paris 20e", lat:48.849, lng:2.397, price:2200, charges:180, surface:88, rooms:4, bedrooms:3, furnished:false, dpe:"B", badge:"Location", img:"#EDE5DA" },
-  { id:10, title:"Appartement vue tour Eiffel", type:"apartment", city:"Paris 15e", lat:48.847, lng:2.300, price:2400, charges:120, surface:75, rooms:3, bedrooms:2, furnished:true, dpe:"A", badge:"Location", img:"#E5DDD5" },
-  { id:11, title:"Studio étudiant — Odéon", type:"studio", city:"Paris 6e", lat:48.851, lng:2.339, price:890, charges:55, surface:22, rooms:1, bedrooms:0, furnished:true, dpe:"C", badge:"Location", img:"#F0E8DE" },
-  { id:12, title:"T3 calme cour intérieure", type:"apartment", city:"Paris 5e", lat:48.849, lng:2.349, price:1750, charges:100, surface:68, rooms:3, bedrooms:2, furnished:false, dpe:"D", badge:"Location", img:"#EAE0D5" },
+  { id:1, title:"T3 briques roses — Capitole", type:"apartment", city:"Capitole", lat:43.604, lng:1.444, price:850, charges:60, surface:65, rooms:3, bedrooms:2, furnished:false, dpe:"C", badge:"Location", img:"#EDE5DA" },
+  { id:2, title:"Studio meublé — Saint-Cyprien", type:"studio", city:"Saint-Cyprien", lat:43.599, lng:1.432, price:520, charges:40, surface:26, rooms:1, bedrooms:0, furnished:true, dpe:"D", badge:"Location", img:"#E8DDD0" },
+  { id:3, title:"T3 lumineux — Carmes", type:"apartment", city:"Carmes", lat:43.599, lng:1.445, price:780, charges:55, surface:62, rooms:3, bedrooms:2, furnished:false, dpe:"B", badge:"Location", img:"#F0E8DE" },
+  { id:4, title:"Loft rénové — Saint-Étienne", type:"loft", city:"Saint-Étienne", lat:43.601, lng:1.449, price:1100, charges:80, surface:85, rooms:4, bedrooms:2, furnished:true, dpe:"C", badge:"Location", img:"#E5DCD2" },
+  { id:5, title:"Studio calme — Rangueil", type:"studio", city:"Rangueil", lat:43.570, lng:1.459, price:430, charges:35, surface:22, rooms:1, bedrooms:0, furnished:true, dpe:"E", badge:"Location", img:"#EDE2D4" },
+  { id:6, title:"Maison avec jardin — Lardenne", type:"house", city:"Lardenne", lat:43.603, lng:1.388, price:1350, charges:0, surface:110, rooms:5, bedrooms:4, furnished:false, dpe:"C", badge:"Location", img:"#E9E0D5" },
+  { id:7, title:"T2 rénové — Jean Jaurès", type:"apartment", city:"Jean Jaurès", lat:43.606, lng:1.452, price:620, charges:45, surface:42, rooms:2, bedrooms:1, furnished:false, dpe:"D", badge:"Location", img:"#F2EAE0" },
+  { id:8, title:"Chambre meublée — Arnaud Bernard", type:"room", city:"Arnaud Bernard", lat:43.609, lng:1.443, price:380, charges:30, surface:14, rooms:1, bedrooms:1, furnished:true, dpe:"F", badge:"Location", img:"#E8DDD0" },
+  { id:9, title:"T4 familial — Côte Pavée", type:"apartment", city:"Côte Pavée", lat:43.591, lng:1.470, price:1050, charges:90, surface:88, rooms:4, bedrooms:3, furnished:false, dpe:"B", badge:"Location", img:"#EDE5DA" },
+  { id:10, title:"T3 terrasse — Compans", type:"apartment", city:"Compans-Caffarelli", lat:43.611, lng:1.437, price:890, charges:70, surface:70, rooms:3, bedrooms:2, furnished:true, dpe:"A", badge:"Location", img:"#E5DDD5" },
+  { id:11, title:"Studio étudiant — Mirail", type:"studio", city:"Mirail", lat:43.579, lng:1.399, price:390, charges:30, surface:20, rooms:1, bedrooms:0, furnished:true, dpe:"C", badge:"Location", img:"#F0E8DE" },
+  { id:12, title:"T3 calme — Minimes", type:"apartment", city:"Minimes", lat:43.614, lng:1.455, price:730, charges:50, surface:58, rooms:3, bedrooms:2, furnished:false, dpe:"D", badge:"Location", img:"#EAE0D5" },
 ];
 
 // ─── STATE
@@ -537,7 +537,7 @@ let map, markers = [], markerMap = new Map();
 
 function initMap() {
   if (map) return;
-  map = L.map('map', { zoomControl: true }).setView([48.862, 2.349], 12);
+  map = L.map('map', { zoomControl: true }).setView([43.600, 1.444], 13);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap'
   }).addTo(map);
