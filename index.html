@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Drify — La plateforme immobilière tout-en-un</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --beige: #F2EDE6;
+      --beige-dark: #E8E0D5;
+      --brown: #4A3728;
+      --brown-mid: #6B4F3A;
+      --brown-light: #8B6F5E;
+      --white: #FFFFFF;
+      --text-main: #2C1A0E;
+      --text-muted: #7A6258;
+      --border: #D9CFC6;
+      --card-bg: #FDFAF7;
+      --green: #2D6A4F;
+      --green-light: #E8F5EE;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--beige);
+      color: var(--text-main);
+      line-height: 1.6;
+    }
+
+    /* NAV */
+    nav {
+      background: var(--beige);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 18px;
+      color: var(--brown);
+      text-decoration: none;
+    }
+
+    .nav-logo-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--brown);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--beige);
+      font-size: 14px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: var(--text-muted);
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--brown); }
+
+    .nav-links a.active { color: var(--brown); font-weight: 500; }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-outline {
+      padding: 8px 18px;
+      border: 1px solid var(--border);
+      background: transparent;
+      border-radius: 8px;
+      font-size: 14px;
+      color: var(--brown);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-outline:hover { background: var(--beige-dark); }
+
+    .btn-primary {
+      padding: 8px 18px;
+      background: var(--brown);
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      color: var(--beige);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary:hover { background: var(--brown-mid); }
+
+    /* HERO */
+    .hero {
+      text-align: center;
+      padding: 80px 2rem 60px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .hero-badge {
+      display: inline-block;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 6px 18px;
+      font-size: 13px;
+      color: var(--brown-mid);
+      margin-bottom: 28px;
+    }
+
+    .hero h1 {
+      font-size: clamp(36px, 5vw, 58px);
+      font-weight: 800;
+      color: var(--brown);
+      line-height: 1.15;
+      margin-bottom: 20px;
+      letter-spacing: -1px;
+    }
+
+    .hero p {
+      font-size: 17px;
+      color: var(--text-muted);
+      margin-bottom: 40px;
+      max-width: 560px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* SEARCH BAR */
+    .search-bar {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      max-width: 640px;
+      margin: 0 auto 48px;
+      box-shadow: 0 2px 12px rgba(74,55,40,0.08);
+    }
+
+    .search-select {
+      padding: 10px 14px;
+      border: none;
+      background: var(--beige);
+      border-radius: 8px;
+      font-size: 14px;
+      color: var(--text-main);
+      cursor: pointer;
+      outline: none;
+      min-width: 120px;
+    }
+
+    .search-input-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 12px;
+    }
+
+    .search-input-wrap svg { color: var(--text-muted); flex-shrink: 0; }
+
+    .search-input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      font-size: 15px;
+      color: var(--text-main);
+      outline: none;
+    }
+
+    .search-input::placeholder { color: var(--text-muted); }
+
+    .btn-search {
+      background: var(--brown);
+      color: var(--beige);
+      border: none;
+      border-radius: 10px;
+      padding: 12px 24px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.2s;
+    }
+
+    .btn-search:hover { background: var(--brown-mid); }
+
+    /* STATS */
+    .stats {
+      display: flex;
+      justify-content: center;
+      gap: 0;
+      margin-bottom: 80px;
+    }
+
+    .stat-item {
+      text-align: center;
+      padding: 0 40px;
+    }
+
+    .stat-item + .stat-item {
+      border-left: 1px solid var(--border);
+    }
+
+    .stat-number {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--brown);
+    }
+
+    .stat-label {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* ANNONCES */
+    .section {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 2rem 80px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 28px;
+    }
+
+    .section-header h2 {
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--brown);
+    }
+
+    .section-header p {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .see-all {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+      color: var(--brown-mid);
+      font-size: 14px;
+      border: 1px solid var(--border);
+      padding: 8px 16px;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+
+    .see-all:hover { background: var(--beige-dark); }
+
+    .listings-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    @media (max-width: 900px) {
+      .listings-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 600px) {
+      .listings-grid { grid-template-columns: 1fr; }
+      .nav-links { display: none; }
+    }
+
+    .listing-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.2s;
+      cursor: pointer;
+    }
+
+    .listing-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(74,55,40,0.12);
+    }
+
+    .listing-img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      background: var(--beige-dark);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .listing-img-placeholder {
+      width: 100%;
+      height: 200px;
+      background: linear-gradient(135deg, var(--beige-dark) 0%, var(--border) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      font-size: 40px;
+      position: relative;
+    }
+
+    .listing-badge {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      background: var(--white);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--brown);
+    }
+
+    .listing-fav {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 32px;
+      height: 32px;
+      background: var(--white);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border: none;
+    }
+
+    .listing-img-wrap { position: relative; }
+
+    .listing-body { padding: 16px; }
+
+    .listing-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .listing-location {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .listing-meta {
+      display: flex;
+      gap: 12px;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+    }
+
+    .listing-meta span { display: flex; align-items: center; gap: 4px; }
+
+    .listing-price {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--brown);
+    }
+
+    .listing-price span {
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--text-muted);
+    }
+
+    /* FEATURES */
+    .features-section {
+      background: var(--white);
+      padding: 80px 2rem;
+    }
+
+    .features-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .features-header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .features-header h2 {
+      font-size: 30px;
+      font-weight: 700;
+      color: var(--brown);
+      margin-bottom: 8px;
+    }
+
+    .features-header p {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .features-grid { grid-template-columns: 1fr; }
+    }
+
+    .feature-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px;
+      transition: box-shadow 0.2s;
+    }
+
+    .feature-card:hover {
+      box-shadow: 0 4px 16px rgba(74,55,40,0.08);
+    }
+
+    .feature-icon {
+      width: 44px;
+      height: 44px;
+      background: var(--beige);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      font-size: 20px;
+    }
+
+    .feature-card h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 8px;
+    }
+
+    .feature-card p {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* CTA */
+    .cta-section {
+      background: var(--brown);
+      margin: 80px 2rem;
+      border-radius: 20px;
+      max-width: 1200px;
+      margin-left: auto;
+      margin-right: auto;
+      margin-top: 80px;
+      padding: 60px 40px;
+      text-align: center;
+    }
+
+    .cta-section h2 {
+      font-size: 30px;
+      font-weight: 700;
+      color: var(--beige);
+      margin-bottom: 12px;
+    }
+
+    .cta-section p {
+      color: rgba(242,237,230,0.7);
+      margin-bottom: 32px;
+      font-size: 15px;
+    }
+
+    .btn-cta {
+      background: var(--white);
+      color: var(--brown);
+      border: none;
+      border-radius: 10px;
+      padding: 14px 32px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .btn-cta:hover { opacity: 0.9; }
+
+    /* FOOTER */
+    footer {
+      background: var(--beige);
+      border-top: 1px solid var(--border);
+      padding: 40px 2rem;
+      text-align: center;
+    }
+
+    footer .footer-logo {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--brown);
+      margin-bottom: 12px;
+    }
+
+    footer p {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    footer .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin: 16px 0;
+      list-style: none;
+    }
+
+    footer .footer-links a {
+      font-size: 13px;
+      color: var(--text-muted);
+      text-decoration: none;
+    }
+
+    footer .footer-links a:hover { color: var(--brown); }
+  </style>
+</head>
+<body>
+
+  <!-- NAVIGATION -->
+  <nav>
+    <a href="#" class="nav-logo">
+      <div class="nav-logo-icon">D</div>
+      Drify
+    </a>
+    <ul class="nav-links">
+      <li><a href="#" class="active">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Accueil
+      </a></li>
+      <li><a href="#">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Rechercher
+      </a></li>
+      <li><a href="#">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        Publier
+      </a></li>
+      <li><a href="#">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        Messages
+      </a></li>
+      <li><a href="#">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+        Favoris
+      </a></li>
+    </ul>
+    <div class="nav-right">
+      <button class="btn-outline">Se connecter</button>
+      <button class="btn-primary">S'inscrire</button>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section>
+    <div class="hero">
+      <div class="hero-badge">La plateforme immobilière tout-en-un</div>
+      <h1>La solution digitale au service de toute l'expérience immobilière</h1>
+      <p>Avis vérifiés, loyers automatisés, documents centralisés — tout votre immobilier enfin simplifié</p>
+
+      <!-- SEARCH -->
+      <div class="search-bar">
+        <select class="search-select">
+          <option>Location</option>
+          <option>Vente</option>
+        </select>
+        <div class="search-input-wrap">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <input class="search-input" type="text" placeholder="Ville, code postal ou quartier..." />
+        </div>
+        <button class="btn-search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Rechercher
+        </button>
+      </div>
+
+      <!-- STATS -->
+      <div class="stats">
+        <div class="stat-item">
+          <div class="stat-number">Bientôt</div>
+          <div class="stat-label">Annonces actives</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">Bientôt</div>
+          <div class="stat-label">Utilisateurs</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">100%</div>
+          <div class="stat-label">Gratuit au démarrage</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ANNONCES -->
+  <div class="section">
+    <div class="section-header">
+      <div>
+        <h2>Biens à la une</h2>
+        <p>Les dernières annonces publiées</p>
+      </div>
+      <a href="#" class="see-all">Voir tout →</a>
+    </div>
+
+    <div class="listings-grid">
+
+      <div class="listing-card">
+        <div class="listing-img-wrap">
+          <div class="listing-img-placeholder">🏠
+            <span class="listing-badge">Location</span>
+            <button class="listing-fav">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B4F3A" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="listing-body">
+          <div class="listing-title">Magnifique T3 lumineux avec balcon</div>
+          <div class="listing-location">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Paris, 75004
+          </div>
+          <div class="listing-meta">
+            <span>↗ 72 m²</span>
+            <span>🛏 2</span>
+            <span>🚿 1</span>
+          </div>
+          <div class="listing-price">1 850 € <span>/mois + 180 € charges</span></div>
+        </div>
+      </div>
+
+      <div class="listing-card">
+        <div class="listing-img-wrap">
+          <div class="listing-img-placeholder">🏢
+            <span class="listing-badge">Location</span>
+            <button class="listing-fav">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B4F3A" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="listing-body">
+          <div class="listing-title">T2 rénové avec terrasse — Lyon</div>
+          <div class="listing-location">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Lyon, 69006
+          </div>
+          <div class="listing-meta">
+            <span>↗ 48 m²</span>
+            <span>🛏 1</span>
+            <span>🚿 1</span>
+          </div>
+          <div class="listing-price">980 € <span>/mois + 80 € charges</span></div>
+        </div>
+      </div>
+
+      <div class="listing-card">
+        <div class="listing-img-wrap">
+          <div class="listing-img-placeholder">🏗
+            <span class="listing-badge">Location</span>
+            <button class="listing-fav">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B4F3A" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="listing-body">
+          <div class="listing-title">Loft industriel rénové — Montreuil</div>
+          <div class="listing-location">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Montreuil, 93100
+          </div>
+          <div class="listing-meta">
+            <span>↗ 95 m²</span>
+            <span>🛏 2</span>
+            <span>🚿 1</span>
+          </div>
+          <div class="listing-price">1 600 € <span>/mois + 120 € charges</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FEATURES -->
+  <div class="features-section">
+    <div class="features-inner">
+      <div class="features-header">
+        <h2>Pourquoi Drify ?</h2>
+        <p>Moins de démarches, plus de simplicité.</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">📋</div>
+          <h3>Annonces premium</h3>
+          <p>Des milliers de biens vérifiés et mis à jour en temps réel, accessibles en quelques secondes.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">💬</div>
+          <h3>Messagerie intégrée</h3>
+          <p>Communiquez directement avec les propriétaires sans jamais quitter la plateforme.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🔒</div>
+          <h3>Dossier sécurisé & documents centralisés</h3>
+          <p>Partagez votre dossier locatif en toute sécurité en un seul clic.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">💳</div>
+          <h3>Paiement simplifié</h3>
+          <p>Payez votre loyer et recevez votre quittance instantanément chaque mois.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">⭐</div>
+          <h3>Système d'avis croisé et profil intégré</h3>
+          <p>Un système d'évaluation transparent et fiable entre locataires et propriétaires.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📊</div>
+          <h3>Estimation IA</h3>
+          <p>Estimez la valeur locative de votre bien instantanément grâce à l'intelligence artificielle.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div style="max-width:1160px; margin: 80px auto; padding: 0 2rem;">
+    <div class="cta-section">
+      <h2>Prêt à simplifier votre immobilier ?</h2>
+      <p>Rejoignez les premiers utilisateurs qui font confiance à Drify</p>
+      <button class="btn-cta">Créez votre compte gratuitement</button>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-logo">Drify</div>
+    <ul class="footer-links">
+      <li><a href="#">À propos</a></li>
+      <li><a href="#">Contact</a></li>
+      <li><a href="#">CGU</a></li>
+      <li><a href="#">Confidentialité</a></li>
+    </ul>
+    <p>© 2026 Drify — Tous droits réservés</p>
+  </footer>
+
+</body>
+</html>
