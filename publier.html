@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Drify — Publier une annonce</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    :root {
+      --bg:          #FDFCFA;
+      --bg-soft:     #F7F3EE;
+      --bg-card:     #FFFFFF;
+      --brown:       #3D2E22;
+      --brown-mid:   #5C4433;
+      --brown-light: #96766A;
+      --border:      #EAE3DA;
+      --border-soft: #F0EBE4;
+      --text:        #1A0F08;
+      --text-muted:  #8A7068;
+      --text-light:  #B5A49C;
+      --green:       #2D7A4F;
+      --green-bg:    #E8F5E9;
+      --red:         #C53030;
+      --red-bg:      #FFF5F5;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ─── NAV ─── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      height: 60px;
+      display: flex; align-items: center;
+      padding: 0 40px;
+      background: rgba(253,252,250,0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border-soft);
+    }
+    .logo {
+      display: flex; align-items: center; gap: 9px;
+      text-decoration: none; margin-right: 48px; flex-shrink: 0;
+    }
+    .logo-text {
+      font-size: 18px; font-weight: 800;
+      letter-spacing: -0.5px; color: var(--brown);
+    }
+    .nav-links {
+      display: flex; align-items: center; gap: 2px; flex: 1;
+    }
+    .nav-links a {
+      text-decoration: none; color: var(--text-muted);
+      font-size: 14px; font-weight: 500;
+      padding: 6px 14px; border-radius: 8px;
+      transition: color 0.15s, background 0.15s;
+    }
+    .nav-links a:hover { color: var(--brown); background: var(--bg-soft); }
+    .nav-links a.active { color: var(--brown); font-weight: 600; }
+    .nav-end { display: flex; align-items: center; gap: 8px; }
+    .btn-ghost {
+      padding: 7px 16px; border-radius: 8px;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      text-decoration: none; color: var(--brown-mid);
+      border: 1px solid var(--border);
+      background: transparent;
+      transition: background 0.15s;
+      font-family: inherit;
+    }
+    .btn-ghost:hover { background: var(--bg-soft); }
+    .btn-primary {
+      padding: 7px 18px; border-radius: 8px;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      text-decoration: none; color: #fff;
+      background: var(--brown);
+      border: none;
+      transition: opacity 0.15s;
+      font-family: inherit;
+    }
+    .btn-primary:hover { opacity: 0.85; }
+
+    /* ─── PAGE LAYOUT ─── */
+    .page-container {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 48px 40px 100px;
+    }
+    .page-title {
+      font-size: 32px; font-weight: 800;
+      letter-spacing: -1px; color: var(--brown);
+      margin-bottom: 8px;
+    }
+    .page-subtitle {
+      font-size: 15px; color: var(--text-muted);
+      margin-bottom: 40px;
+    }
+
+    /* ─── STEPPER ─── */
+    .stepper {
+      display: flex; align-items: center; gap: 0;
+      margin-bottom: 48px;
+    }
+    .step {
+      display: flex; align-items: center; gap: 10px;
+      cursor: pointer;
+    }
+    .step-num {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700;
+      border: 2px solid var(--border);
+      color: var(--text-light);
+      background: var(--bg-card);
+      transition: all 0.25s;
+    }
+    .step.active .step-num {
+      background: var(--brown);
+      border-color: var(--brown);
+      color: #fff;
+    }
+    .step.done .step-num {
+      background: var(--green);
+      border-color: var(--green);
+      color: #fff;
+    }
+    .step-label {
+      font-size: 13px; font-weight: 600;
+      color: var(--text-light);
+      transition: color 0.25s;
+    }
+    .step.active .step-label { color: var(--brown); }
+    .step.done .step-label { color: var(--green); }
+    .step-line {
+      flex: 1; height: 2px;
+      background: var(--border);
+      margin: 0 16px;
+      transition: background 0.25s;
+    }
+    .step-line.done { background: var(--green); }
+
+    /* ─── FORM SECTIONS ─── */
+    .form-step { display: none; }
+    .form-step.visible { display: block; }
+
+    .form-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      margin-bottom: 24px;
+    }
+    .form-section-title {
+      font-size: 17px; font-weight: 700;
+      color: var(--brown); margin-bottom: 24px;
+      letter-spacing: -0.3px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .form-row.single { grid-template-columns: 1fr; }
+    .form-row.triple { grid-template-columns: 1fr 1fr 1fr; }
+
+    .field {
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .field label {
+      font-size: 12px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.5px;
+      color: var(--text-muted);
+    }
+    .field input, .field select, .field textarea {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 14px; font-family: inherit;
+      color: var(--text);
+      background: var(--bg);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus {
+      border-color: var(--brown-light);
+    }
+    .field textarea {
+      resize: vertical; min-height: 120px;
+    }
+    .field select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%238A7068' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 36px;
+    }
+    .field .hint {
+      font-size: 11px; color: var(--text-light);
+    }
+
+    /* Toggle switch */
+    .toggle-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border-soft);
+    }
+    .toggle-row:last-child { border-bottom: none; }
+    .toggle-label {
+      font-size: 14px; font-weight: 500; color: var(--text);
+    }
+    .toggle-label span {
+      display: block; font-size: 12px; color: var(--text-muted);
+      font-weight: 400; margin-top: 2px;
+    }
+    .toggle {
+      width: 44px; height: 24px;
+      background: var(--border);
+      border-radius: 12px;
+      position: relative;
+      cursor: pointer;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+    .toggle::after {
+      content: '';
+      position: absolute;
+      top: 2px; left: 2px;
+      width: 20px; height: 20px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    }
+    .toggle.on { background: var(--brown); }
+    .toggle.on::after { transform: translateX(20px); }
+
+    /* ─── PHOTO UPLOAD ─── */
+    .photo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 12px;
+    }
+    .photo-slot {
+      aspect-ratio: 4/3;
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      background: var(--bg);
+      position: relative;
+      overflow: hidden;
+    }
+    .photo-slot:hover {
+      border-color: var(--brown-light);
+      background: var(--bg-soft);
+    }
+    .photo-slot svg { color: var(--text-light); }
+    .photo-slot span {
+      font-size: 11px; color: var(--text-light); font-weight: 500;
+    }
+    .photo-slot.has-photo {
+      border-style: solid;
+      border-color: var(--border);
+    }
+    .photo-slot.has-photo img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
+    .photo-slot .remove-photo {
+      position: absolute; top: 6px; right: 6px;
+      width: 24px; height: 24px;
+      background: rgba(0,0,0,0.6);
+      color: #fff;
+      border: none; border-radius: 50%;
+      font-size: 14px; cursor: pointer;
+      display: none;
+      align-items: center; justify-content: center;
+    }
+    .photo-slot.has-photo .remove-photo { display: flex; }
+    .photo-slot.primary::after {
+      content: 'Photo principale';
+      position: absolute; bottom: 0; left: 0; right: 0;
+      background: rgba(61,46,34,0.8);
+      color: #fff;
+      font-size: 10px; font-weight: 600;
+      text-align: center; padding: 4px;
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+
+    /* ─── FEATURES GRID ─── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 8px;
+    }
+    .feature-tag {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 13px; font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+      background: var(--bg);
+      user-select: none;
+    }
+    .feature-tag:hover {
+      border-color: var(--brown-light);
+      color: var(--brown);
+    }
+    .feature-tag.selected {
+      background: var(--brown);
+      border-color: var(--brown);
+      color: #fff;
+    }
+
+    /* ─── AI DESCRIPTION ─── */
+    .ai-box {
+      background: linear-gradient(135deg, #F7F3EE 0%, #FDFCFA 100%);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+      margin-top: 16px;
+    }
+    .ai-header {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 12px;
+    }
+    .ai-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: var(--brown);
+      color: #fff;
+      font-size: 11px; font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .ai-header p {
+      font-size: 13px; color: var(--text-muted);
+    }
+    .ai-btn {
+      padding: 10px 20px;
+      background: var(--brown);
+      color: #fff;
+      border: none; border-radius: 10px;
+      font-size: 13px; font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      display: inline-flex; align-items: center; gap: 8px;
+      transition: opacity 0.15s;
+    }
+    .ai-btn:hover { opacity: 0.85; }
+    .ai-btn:disabled {
+      opacity: 0.5; cursor: not-allowed;
+    }
+    .ai-result {
+      margin-top: 16px;
+      padding: 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 14px;
+      line-height: 1.7;
+      color: var(--text);
+      display: none;
+    }
+    .ai-result.visible { display: block; }
+    .ai-actions {
+      display: flex; gap: 8px; margin-top: 12px;
+    }
+
+    /* ─── ADDRESS AUTOCOMPLETE ─── */
+    .address-wrap { position: relative; }
+    .address-suggestions {
+      position: absolute;
+      top: 100%; left: 0; right: 0;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-top: 4px;
+      box-shadow: 0 8px 24px rgba(61,46,34,0.12);
+      z-index: 10;
+      display: none;
+      overflow: hidden;
+    }
+    .address-suggestions.visible { display: block; }
+    .address-suggestion {
+      padding: 10px 14px;
+      font-size: 13px; color: var(--text);
+      cursor: pointer;
+      transition: background 0.1s;
+      border-bottom: 1px solid var(--border-soft);
+    }
+    .address-suggestion:last-child { border-bottom: none; }
+    .address-suggestion:hover { background: var(--bg-soft); }
+    .address-suggestion span {
+      color: var(--text-muted); font-size: 12px;
+    }
+
+    /* ─── MAP PREVIEW ─── */
+    #map-preview {
+      width: 100%; height: 200px;
+      border-radius: 10px;
+      margin-top: 12px;
+      border: 1px solid var(--border);
+      display: none;
+    }
+    #map-preview.visible { display: block; }
+
+    /* ─── NAVIGATION BUTTONS ─── */
+    .form-nav {
+      display: flex; justify-content: space-between;
+      align-items: center;
+      margin-top: 40px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border-soft);
+    }
+    .btn-back {
+      padding: 10px 20px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 14px; font-weight: 600;
+      color: var(--brown-mid);
+      background: transparent;
+      cursor: pointer;
+      font-family: inherit;
+      display: flex; align-items: center; gap: 6px;
+      transition: background 0.15s;
+    }
+    .btn-back:hover { background: var(--bg-soft); }
+    .btn-next {
+      padding: 12px 28px;
+      background: var(--brown);
+      color: #fff;
+      border: none; border-radius: 10px;
+      font-size: 14px; font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      display: flex; align-items: center; gap: 8px;
+      transition: opacity 0.15s;
+    }
+    .btn-next:hover { opacity: 0.85; }
+    .btn-next:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ─── REVIEW SUMMARY ─── */
+    .review-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+    .review-card-header {
+      padding: 16px 24px;
+      background: var(--bg-soft);
+      border-bottom: 1px solid var(--border-soft);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .review-card-header h3 {
+      font-size: 14px; font-weight: 700;
+      color: var(--brown);
+    }
+    .review-edit-btn {
+      font-size: 12px; font-weight: 600;
+      color: var(--brown-mid);
+      text-decoration: none;
+      cursor: pointer;
+      background: none; border: none;
+      font-family: inherit;
+    }
+    .review-edit-btn:hover { text-decoration: underline; }
+    .review-card-body {
+      padding: 20px 24px;
+    }
+    .review-row {
+      display: flex; justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border-soft);
+      font-size: 14px;
+    }
+    .review-row:last-child { border-bottom: none; }
+    .review-row .label { color: var(--text-muted); }
+    .review-row .value { font-weight: 600; color: var(--text); }
+
+    .review-photos {
+      display: flex; gap: 8px; flex-wrap: wrap;
+      padding: 16px 24px;
+    }
+    .review-photo {
+      width: 80px; height: 60px;
+      border-radius: 8px;
+      background: var(--bg-soft);
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .review-photo img {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+
+    .success-box {
+      text-align: center;
+      padding: 60px 40px;
+      display: none;
+    }
+    .success-box.visible { display: block; }
+    .success-icon {
+      width: 64px; height: 64px;
+      background: var(--green-bg);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px;
+    }
+    .success-box h2 {
+      font-size: 24px; font-weight: 700;
+      color: var(--brown); margin-bottom: 8px;
+    }
+    .success-box p {
+      font-size: 15px; color: var(--text-muted);
+      margin-bottom: 32px;
+    }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 768px) {
+      nav { padding: 0 16px; }
+      .nav-links { display: none; }
+      .page-container { padding: 32px 16px 80px; }
+      .page-title { font-size: 26px; }
+      .form-section { padding: 20px; }
+      .form-row { grid-template-columns: 1fr; }
+      .form-row.triple { grid-template-columns: 1fr 1fr; }
+      .stepper { gap: 0; }
+      .step-label { font-size: 11px; }
+      .step-line { margin: 0 8px; }
+      .photo-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="logo">
+    <svg width="30" height="30" viewBox="0 0 32 32" fill="none">
+      <path d="M16 3L29 14V29H3V14L16 3Z" stroke="#3D2E22" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M16 10.5C13.8 10.5 12 12.3 12 14.5C12 17.2 16 22.5 16 22.5C16 22.5 20 17.2 20 14.5C20 12.3 18.2 10.5 16 10.5Z" stroke="#3D2E22" stroke-width="1.6"/>
+      <circle cx="16" cy="14.5" r="1.8" fill="#3D2E22"/>
+    </svg>
+    <span class="logo-text">Drify</span>
+  </a>
+  <div class="nav-links">
+    <a href="index.html">Accueil</a>
+    <a href="recherche.html">Rechercher</a>
+    <a href="publier.html" class="active">Publier</a>
+    <a href="messages.html">Messages</a>
+    <a href="#">Favoris</a>
+  </div>
+  <div class="nav-end">
+    <a href="#" class="btn-ghost">Se connecter</a>
+    <a href="#" class="btn-primary">S'inscrire</a>
+  </div>
+</nav>
+
+<div class="page-container">
+  <h1 class="page-title">Publier une annonce</h1>
+  <p class="page-subtitle">Remplissez les informations de votre bien en 3 étapes simples.</p>
+
+  <!-- STEPPER -->
+  <div class="stepper">
+    <div class="step active" data-step="1">
+      <div class="step-num">1</div>
+      <div class="step-label">Le bien</div>
+    </div>
+    <div class="step-line"></div>
+    <div class="step active" data-step="2">
+      <div class="step-num">2</div>
+      <div class="step-label">Photos & description</div>
+    </div>
+    <div class="step-line"></div>
+    <div class="step" data-step="3">
+      <div class="step-num">3</div>
+      <div class="step-label">Vérification</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- STEP 1: LE BIEN -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="form-step visible" id="step-1">
+
+    <!-- Type & loyer -->
+    <div class="form-section">
+      <div class="form-section-title">Informations principales</div>
+
+      <div class="form-row">
+        <div class="field">
+          <label>Type de bien</label>
+          <select id="property-type">
+            <option value="">Sélectionner</option>
+            <option value="apartment">Appartement</option>
+            <option value="house">Maison</option>
+            <option value="studio">Studio</option>
+            <option value="room">Chambre</option>
+            <option value="parking">Parking</option>
+            <option value="commercial">Local commercial</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Titre de l'annonce</label>
+          <input type="text" id="property-title" placeholder="Ex : T3 lumineux — Capitole">
+        </div>
+      </div>
+
+      <div class="form-row triple">
+        <div class="field">
+          <label>Loyer mensuel (CC)</label>
+          <input type="number" id="property-rent" placeholder="850" min="0">
+          <span class="hint">Charges comprises</span>
+        </div>
+        <div class="field">
+          <label>Dont charges</label>
+          <input type="number" id="property-charges" placeholder="60" min="0">
+        </div>
+        <div class="field">
+          <label>Dépôt de garantie</label>
+          <input type="number" id="property-deposit" placeholder="790" min="0">
+        </div>
+      </div>
+    </div>
+
+    <!-- Surface & pièces -->
+    <div class="form-section">
+      <div class="form-section-title">Caractéristiques</div>
+
+      <div class="form-row triple">
+        <div class="field">
+          <label>Surface (m²)</label>
+          <input type="number" id="property-surface" placeholder="65" min="1">
+        </div>
+        <div class="field">
+          <label>Pièces</label>
+          <select id="property-rooms">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3" selected>3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6+">6+</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Chambres</label>
+          <select id="property-bedrooms">
+            <option value="0">Studio</option>
+            <option value="1">1</option>
+            <option value="2" selected>2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5+">5+</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="field">
+          <label>Étage</label>
+          <select id="property-floor">
+            <option value="rdc">Rez-de-chaussée</option>
+            <option value="1">1er</option>
+            <option value="2">2ème</option>
+            <option value="3" selected>3ème</option>
+            <option value="4">4ème</option>
+            <option value="5+">5ème+</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Disponible à partir du</label>
+          <input type="date" id="property-available">
+        </div>
+      </div>
+
+      <div style="margin-top: 16px;">
+        <div class="toggle-row">
+          <div class="toggle-label">
+            Meublé
+            <span>Le bien est proposé meublé</span>
+          </div>
+          <div class="toggle" id="toggle-furnished" data-field="furnished"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DPE -->
+    <div class="form-section">
+      <div class="form-section-title">Performance énergétique</div>
+      <div class="form-row">
+        <div class="field">
+          <label>DPE</label>
+          <select id="property-dpe">
+            <option value="">Non renseigné</option>
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+            <option value="D">D</option>
+            <option value="E">E</option>
+            <option value="F">F (passoire)</option>
+            <option value="G">G (passoire)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>GES</label>
+          <select id="property-ges">
+            <option value="">Non renseigné</option>
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+            <option value="D">D</option>
+            <option value="E">E</option>
+            <option value="F">F</option>
+            <option value="G">G</option>
+          </select>
+        </div>
+      </div>
+      <p style="font-size: 12px; color: var(--text-light); margin-top: 8px;">
+        Obligatoire depuis la loi Climat et Résilience. Les logements F et G ne peuvent plus être loués progressivement.
+      </p>
+    </div>
+
+    <!-- Adresse -->
+    <div class="form-section">
+      <div class="form-section-title">Localisation</div>
+
+      <div class="form-row single">
+        <div class="field address-wrap">
+          <label>Adresse</label>
+          <input type="text" id="property-address" placeholder="Commencez à taper l'adresse..." autocomplete="off">
+          <div class="address-suggestions" id="address-suggestions"></div>
+          <span class="hint">Recherche via l'API Adresse du gouvernement — votre adresse exacte ne sera jamais affichée</span>
+        </div>
+      </div>
+
+      <div class="form-row triple">
+        <div class="field">
+          <label>Ville</label>
+          <input type="text" id="property-city" placeholder="Toulouse" readonly>
+        </div>
+        <div class="field">
+          <label>Code postal</label>
+          <input type="text" id="property-postal" placeholder="31000" readonly>
+        </div>
+        <div class="field">
+          <label>Quartier</label>
+          <input type="text" id="property-quarter" placeholder="Capitole">
+        </div>
+      </div>
+
+      <div id="map-preview"></div>
+    </div>
+
+    <!-- Équipements -->
+    <div class="form-section">
+      <div class="form-section-title">Équipements et commodités</div>
+      <div class="features-grid">
+        <div class="feature-tag" data-feature="parking">Parking</div>
+        <div class="feature-tag" data-feature="balcon">Balcon</div>
+        <div class="feature-tag" data-feature="terrasse">Terrasse</div>
+        <div class="feature-tag" data-feature="cave">Cave</div>
+        <div class="feature-tag" data-feature="ascenseur">Ascenseur</div>
+        <div class="feature-tag" data-feature="digicode">Digicode</div>
+        <div class="feature-tag" data-feature="interphone">Interphone</div>
+        <div class="feature-tag" data-feature="gardien">Gardien</div>
+        <div class="feature-tag" data-feature="parquet">Parquet</div>
+        <div class="feature-tag" data-feature="double-vitrage">Double vitrage</div>
+        <div class="feature-tag" data-feature="fibre">Fibre optique</div>
+        <div class="feature-tag" data-feature="climatisation">Climatisation</div>
+        <div class="feature-tag" data-feature="lave-linge">Lave-linge</div>
+        <div class="feature-tag" data-feature="lave-vaisselle">Lave-vaisselle</div>
+        <div class="feature-tag" data-feature="cuisine-equipee">Cuisine équipée</div>
+        <div class="feature-tag" data-feature="jardin">Jardin</div>
+      </div>
+    </div>
+
+    <div class="form-nav">
+      <div></div>
+      <button class="btn-next" onclick="goToStep(2)">
+        Continuer
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- STEP 2: PHOTOS & DESCRIPTION -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="form-step" id="step-2">
+
+    <!-- Photos -->
+    <div class="form-section">
+      <div class="form-section-title">Photos du bien</div>
+      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+        Ajoutez jusqu'à 10 photos. La première sera la photo principale de l'annonce.
+      </p>
+      <div class="photo-grid" id="photo-grid">
+        <div class="photo-slot primary" onclick="triggerPhotoUpload(0)">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+          <span>Photo principale</span>
+        </div>
+        <div class="photo-slot" onclick="triggerPhotoUpload(1)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 5v14M5 12h14"/></svg>
+          <span>Ajouter</span>
+        </div>
+        <div class="photo-slot" onclick="triggerPhotoUpload(2)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 5v14M5 12h14"/></svg>
+          <span>Ajouter</span>
+        </div>
+        <div class="photo-slot" onclick="triggerPhotoUpload(3)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 5v14M5 12h14"/></svg>
+          <span>Ajouter</span>
+        </div>
+        <div class="photo-slot" onclick="triggerPhotoUpload(4)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 5v14M5 12h14"/></svg>
+          <span>Ajouter</span>
+        </div>
+      </div>
+      <input type="file" id="photo-input" accept="image/*" style="display:none">
+    </div>
+
+    <!-- Description -->
+    <div class="form-section">
+      <div class="form-section-title">Description</div>
+      <div class="form-row single">
+        <div class="field">
+          <label>Décrivez votre bien</label>
+          <textarea id="property-description" placeholder="Décrivez les points forts de votre bien, le quartier, les transports à proximité..."></textarea>
+        </div>
+      </div>
+
+      <!-- AI Generator -->
+      <div class="ai-box">
+        <div class="ai-header">
+          <div class="ai-badge">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a5 5 0 015 5v1a5 5 0 01-10 0V7a5 5 0 015-5z"/><path d="M8 14s-4 2-4 6h16c0-4-4-6-4-6"/></svg>
+            IA
+          </div>
+          <p>Générez automatiquement une description professionnelle basée sur vos informations.</p>
+        </div>
+        <button class="ai-btn" id="ai-generate-btn" onclick="generateDescription()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          Générer avec l'IA
+        </button>
+        <div class="ai-result" id="ai-result"></div>
+        <div class="ai-actions" id="ai-actions" style="display:none">
+          <button class="btn-ghost" onclick="useAiDescription()">Utiliser cette description</button>
+          <button class="btn-ghost" onclick="generateDescription()">Régénérer</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-nav">
+      <button class="btn-back" onclick="goToStep(1)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Retour
+      </button>
+      <button class="btn-next" onclick="goToStep(3)">
+        Vérifier et publier
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- STEP 3: VÉRIFICATION & PUBLICATION -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="form-step" id="step-3">
+
+    <div id="review-content">
+      <!-- Filled by JS -->
+    </div>
+
+    <div class="form-nav">
+      <button class="btn-back" onclick="goToStep(2)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Retour
+      </button>
+      <button class="btn-next" onclick="publishListing()" style="background: var(--green);">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+        Publier l'annonce
+      </button>
+    </div>
+  </div>
+
+  <!-- SUCCESS -->
+  <div class="success-box" id="success-box">
+    <div class="success-icon">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2D7A4F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+    </div>
+    <h2>Annonce publiée !</h2>
+    <p>Votre annonce est maintenant visible par les locataires à Toulouse.<br>Vous recevrez une notification dès qu'un dossier sera déposé.</p>
+    <a href="recherche.html" class="btn-next" style="display: inline-flex;">Voir mon annonce</a>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ─── STATE ───
+let currentStep = 1;
+let selectedFeatures = new Set();
+let photos = [null, null, null, null, null];
+let currentPhotoIndex = 0;
+let selectedLat = null;
+let selectedLng = null;
+let mapInstance = null;
+let mapMarker = null;
+
+// ─── STEPPER ───
+function goToStep(step) {
+  if (step < 1 || step > 3) return;
+
+  // Hide all steps
+  document.querySelectorAll('.form-step').forEach(s => s.classList.remove('visible'));
+  document.getElementById(`step-${step}`).classList.add('visible');
+
+  // Update stepper UI
+  document.querySelectorAll('.step').forEach((el, i) => {
+    const n = i + 1;
+    el.classList.remove('active', 'done');
+    if (n < step) el.classList.add('done');
+    else if (n === step) el.classList.add('active');
+  });
+  document.querySelectorAll('.step-line').forEach((el, i) => {
+    el.classList.toggle('done', i < step - 1);
+  });
+
+  currentStep = step;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  // Build review on step 3
+  if (step === 3) buildReview();
+}
+
+// ─── FEATURE TAGS ───
+document.querySelectorAll('.feature-tag').forEach(tag => {
+  tag.addEventListener('click', () => {
+    const f = tag.dataset.feature;
+    if (selectedFeatures.has(f)) {
+      selectedFeatures.delete(f);
+      tag.classList.remove('selected');
+    } else {
+      selectedFeatures.add(f);
+      tag.classList.add('selected');
+    }
+  });
+});
+
+// ─── TOGGLES ───
+document.querySelectorAll('.toggle').forEach(toggle => {
+  toggle.addEventListener('click', () => {
+    toggle.classList.toggle('on');
+  });
+});
+
+// ─── PHOTO UPLOAD ───
+function triggerPhotoUpload(index) {
+  currentPhotoIndex = index;
+  document.getElementById('photo-input').click();
+}
+
+document.getElementById('photo-input').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    photos[currentPhotoIndex] = ev.target.result;
+    renderPhotos();
+  };
+  reader.readAsDataURL(file);
+  this.value = '';
+});
+
+function renderPhotos() {
+  const grid = document.getElementById('photo-grid');
+  let html = '';
+  for (let i = 0; i < 5; i++) {
+    if (photos[i]) {
+      html += `<div class="photo-slot has-photo${i === 0 ? ' primary' : ''}" onclick="triggerPhotoUpload(${i})">
+        <img src="${photos[i]}" alt="Photo ${i + 1}">
+        <button class="remove-photo" onclick="event.stopPropagation(); removePhoto(${i})">&times;</button>
+      </div>`;
+    } else {
+      html += `<div class="photo-slot${i === 0 ? ' primary' : ''}" onclick="triggerPhotoUpload(${i})">
+        <svg width="${i === 0 ? 24 : 20}" height="${i === 0 ? 24 : 20}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">${i === 0
+          ? '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>'
+          : '<path d="M12 5v14M5 12h14"/>'}</svg>
+        <span>${i === 0 ? 'Photo principale' : 'Ajouter'}</span>
+      </div>`;
+    }
+  }
+  grid.innerHTML = html;
+}
+
+function removePhoto(index) {
+  photos[index] = null;
+  renderPhotos();
+}
+
+// ─── ADDRESS AUTOCOMPLETE (API Adresse data.gouv.fr) ───
+let addressTimeout;
+const addressInput = document.getElementById('property-address');
+const suggestionsEl = document.getElementById('address-suggestions');
+
+addressInput.addEventListener('input', function() {
+  clearTimeout(addressTimeout);
+  const q = this.value.trim();
+  if (q.length < 3) {
+    suggestionsEl.classList.remove('visible');
+    return;
+  }
+  addressTimeout = setTimeout(() => fetchAddresses(q), 300);
+});
+
+async function fetchAddresses(query) {
+  try {
+    const res = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(query)}&limit=5&type=housenumber&autocomplete=1`);
+    const data = await res.json();
+    if (!data.features || data.features.length === 0) {
+      suggestionsEl.classList.remove('visible');
+      return;
+    }
+    suggestionsEl.innerHTML = data.features.map(f => {
+      const p = f.properties;
+      return `<div class="address-suggestion" data-label="${p.label}" data-city="${p.city}" data-postal="${p.postcode}" data-lat="${f.geometry.coordinates[1]}" data-lng="${f.geometry.coordinates[0]}">
+        ${p.name} <span>${p.postcode} ${p.city}</span>
+      </div>`;
+    }).join('');
+    suggestionsEl.classList.add('visible');
+  } catch(e) {
+    console.error('Address API error:', e);
+  }
+}
+
+suggestionsEl.addEventListener('click', function(e) {
+  const item = e.target.closest('.address-suggestion');
+  if (!item) return;
+  addressInput.value = item.dataset.label;
+  document.getElementById('property-city').value = item.dataset.city;
+  document.getElementById('property-postal').value = item.dataset.postal;
+  selectedLat = parseFloat(item.dataset.lat);
+  selectedLng = parseFloat(item.dataset.lng);
+  suggestionsEl.classList.remove('visible');
+  showMapPreview();
+});
+
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.address-wrap')) {
+    suggestionsEl.classList.remove('visible');
+  }
+});
+
+// ─── MAP PREVIEW ───
+function showMapPreview() {
+  if (!selectedLat || !selectedLng) return;
+  const mapEl = document.getElementById('map-preview');
+  mapEl.classList.add('visible');
+
+  if (!mapInstance) {
+    mapInstance = L.map('map-preview', { zoomControl: false, dragging: false, scrollWheelZoom: false }).setView([selectedLat, selectedLng], 15);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OSM'
+    }).addTo(mapInstance);
+  } else {
+    mapInstance.setView([selectedLat, selectedLng], 15);
+  }
+
+  if (mapMarker) mapInstance.removeLayer(mapMarker);
+  mapMarker = L.circle([selectedLat, selectedLng], {
+    radius: 150,
+    color: '#3D2E22',
+    fillColor: '#3D2E22',
+    fillOpacity: 0.12,
+    weight: 2
+  }).addTo(mapInstance);
+}
+
+// ─── AI DESCRIPTION GENERATOR ───
+async function generateDescription() {
+  const btn = document.getElementById('ai-generate-btn');
+  const resultEl = document.getElementById('ai-result');
+  const actionsEl = document.getElementById('ai-actions');
+
+  btn.disabled = true;
+  btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><circle cx="12" cy="12" r="10" stroke-dasharray="30" stroke-dashoffset="10"/></svg> Génération en cours...`;
+
+  // Collect form data for context
+  const type = document.getElementById('property-type').value;
+  const title = document.getElementById('property-title').value;
+  const rent = document.getElementById('property-rent').value;
+  const surface = document.getElementById('property-surface').value;
+  const rooms = document.getElementById('property-rooms').value;
+  const bedrooms = document.getElementById('property-bedrooms').value;
+  const city = document.getElementById('property-city').value || 'Toulouse';
+  const quarter = document.getElementById('property-quarter').value;
+  const furnished = document.getElementById('toggle-furnished').classList.contains('on');
+  const features = [...selectedFeatures].join(', ');
+
+  // For MVP, generate locally (will be replaced by Claude API via Supabase Edge Function)
+  const typeLabels = { apartment:'Appartement', house:'Maison', studio:'Studio', room:'Chambre', parking:'Parking', commercial:'Local commercial' };
+  const typeLabel = typeLabels[type] || 'Bien';
+
+  await new Promise(r => setTimeout(r, 1500)); // Simulated delay
+
+  const desc = `${typeLabel} de ${surface || '—'} m² situé${type === 'house' ? '' : 'e'} dans le quartier ${quarter || city || 'Toulouse'}, ce ${title || 'bien'} offre ${rooms} pièce${rooms > 1 ? 's' : ''} dont ${bedrooms} chambre${bedrooms > 1 ? 's' : ''} dans un cadre agréable.
+
+${furnished ? 'Entièrement meublé et équipé, ce logement est prêt à accueillir son nouveau locataire.' : ''} L'appartement bénéficie d'une belle luminosité naturelle grâce à ses fenêtres donnant sur ${quarter === 'Capitole' ? 'la place du Capitole' : quarter === 'Saint-Cyprien' ? 'les bords de Garonne' : 'un environnement calme et verdoyant'}.
+
+${features ? `Parmi les équipements : ${features}.` : ''} Le quartier ${quarter || city} est idéalement situé à proximité des transports en commun (métro, bus), des commerces et des écoles. ${rent ? `Loyer : ${rent} € charges comprises.` : ''}
+
+Disponible rapidement pour une location ${furnished ? 'meublée' : 'vide'}. N'hésitez pas à nous contacter pour organiser une visite.`;
+
+  resultEl.textContent = desc;
+  resultEl.classList.add('visible');
+  actionsEl.style.display = 'flex';
+
+  btn.disabled = false;
+  btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> Générer avec l'IA`;
+}
+
+function useAiDescription() {
+  const desc = document.getElementById('ai-result').textContent;
+  document.getElementById('property-description').value = desc;
+  document.getElementById('ai-result').classList.remove('visible');
+  document.getElementById('ai-actions').style.display = 'none';
+}
+
+// ─── BUILD REVIEW (STEP 3) ───
+function buildReview() {
+  const data = getFormData();
+  const typeLabels = { apartment:'Appartement', house:'Maison', studio:'Studio', room:'Chambre', parking:'Parking', commercial:'Local commercial' };
+  const container = document.getElementById('review-content');
+
+  let photosHtml = '';
+  photos.forEach(p => {
+    if (p) photosHtml += `<div class="review-photo"><img src="${p}" alt=""></div>`;
+  });
+
+  container.innerHTML = `
+    <div class="review-card">
+      <div class="review-card-header">
+        <h3>Informations du bien</h3>
+        <button class="review-edit-btn" onclick="goToStep(1)">Modifier</button>
+      </div>
+      <div class="review-card-body">
+        <div class="review-row"><span class="label">Titre</span><span class="value">${data.title || '—'}</span></div>
+        <div class="review-row"><span class="label">Type</span><span class="value">${typeLabels[data.type] || '—'}</span></div>
+        <div class="review-row"><span class="label">Loyer CC</span><span class="value">${data.rent ? data.rent + ' €/mois' : '—'}</span></div>
+        <div class="review-row"><span class="label">Charges</span><span class="value">${data.charges ? data.charges + ' €' : '—'}</span></div>
+        <div class="review-row"><span class="label">Dépôt</span><span class="value">${data.deposit ? data.deposit + ' €' : '—'}</span></div>
+        <div class="review-row"><span class="label">Surface</span><span class="value">${data.surface ? data.surface + ' m²' : '—'}</span></div>
+        <div class="review-row"><span class="label">Pièces / Chambres</span><span class="value">${data.rooms} / ${data.bedrooms}</span></div>
+        <div class="review-row"><span class="label">Meublé</span><span class="value">${data.furnished ? 'Oui' : 'Non'}</span></div>
+        <div class="review-row"><span class="label">DPE / GES</span><span class="value">${data.dpe || '—'} / ${data.ges || '—'}</span></div>
+      </div>
+    </div>
+
+    <div class="review-card">
+      <div class="review-card-header">
+        <h3>Localisation</h3>
+        <button class="review-edit-btn" onclick="goToStep(1)">Modifier</button>
+      </div>
+      <div class="review-card-body">
+        <div class="review-row"><span class="label">Adresse</span><span class="value">${data.address || '—'}</span></div>
+        <div class="review-row"><span class="label">Ville</span><span class="value">${data.city || '—'}</span></div>
+        <div class="review-row"><span class="label">Code postal</span><span class="value">${data.postal || '—'}</span></div>
+        <div class="review-row"><span class="label">Quartier</span><span class="value">${data.quarter || '—'}</span></div>
+      </div>
+    </div>
+
+    ${data.features.length > 0 ? `
+    <div class="review-card">
+      <div class="review-card-header">
+        <h3>Équipements</h3>
+        <button class="review-edit-btn" onclick="goToStep(1)">Modifier</button>
+      </div>
+      <div class="review-card-body" style="display:flex;flex-wrap:wrap;gap:6px;">
+        ${data.features.map(f => `<span style="padding:5px 12px;background:var(--bg-soft);border-radius:8px;font-size:13px;font-weight:500;color:var(--brown-mid)">${f}</span>`).join('')}
+      </div>
+    </div>` : ''}
+
+    ${photosHtml ? `
+    <div class="review-card">
+      <div class="review-card-header">
+        <h3>Photos (${photos.filter(Boolean).length})</h3>
+        <button class="review-edit-btn" onclick="goToStep(2)">Modifier</button>
+      </div>
+      <div class="review-photos">${photosHtml}</div>
+    </div>` : ''}
+
+    <div class="review-card">
+      <div class="review-card-header">
+        <h3>Description</h3>
+        <button class="review-edit-btn" onclick="goToStep(2)">Modifier</button>
+      </div>
+      <div class="review-card-body">
+        <p style="font-size:14px;line-height:1.7;color:var(--text);white-space:pre-line">${data.description || 'Aucune description'}</p>
+      </div>
+    </div>
+  `;
+}
+
+function getFormData() {
+  return {
+    type: document.getElementById('property-type').value,
+    title: document.getElementById('property-title').value,
+    rent: document.getElementById('property-rent').value,
+    charges: document.getElementById('property-charges').value,
+    deposit: document.getElementById('property-deposit').value,
+    surface: document.getElementById('property-surface').value,
+    rooms: document.getElementById('property-rooms').value,
+    bedrooms: document.getElementById('property-bedrooms').value,
+    floor: document.getElementById('property-floor').value,
+    available: document.getElementById('property-available').value,
+    furnished: document.getElementById('toggle-furnished').classList.contains('on'),
+    dpe: document.getElementById('property-dpe').value,
+    ges: document.getElementById('property-ges').value,
+    address: document.getElementById('property-address').value,
+    city: document.getElementById('property-city').value,
+    postal: document.getElementById('property-postal').value,
+    quarter: document.getElementById('property-quarter').value,
+    features: [...selectedFeatures],
+    description: document.getElementById('property-description').value,
+    lat: selectedLat,
+    lng: selectedLng
+  };
+}
+
+// ─── PUBLISH ───
+function publishListing() {
+  // MVP: show success (will POST to Supabase in phase 2)
+  document.getElementById('step-3').classList.remove('visible');
+  document.getElementById('success-box').classList.add('visible');
+  document.querySelector('.stepper').style.display = 'none';
+}
+
+// ─── SPIN ANIMATION ───
+const style = document.createElement('style');
+style.textContent = '@keyframes spin { from { transform: rotate(0) } to { transform: rotate(360deg) } }';
+document.head.appendChild(style);
+
+// ─── SET DEFAULT DATE ───
+const today = new Date();
+today.setDate(today.getDate() + 14);
+document.getElementById('property-available').value = today.toISOString().split('T')[0];
+</script>
+</body>
+</html>
