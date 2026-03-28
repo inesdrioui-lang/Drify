@@ -84,31 +84,49 @@
 
     /* ─── HERO ─── */
     .hero {
-      padding: 96px 40px 80px;
+      padding: 80px 40px 72px;
       text-align: center;
-      max-width: 820px; margin: 0 auto;
+      max-width: 900px; margin: 0 auto;
     }
-    .hero-eyebrow {
-      display: inline-flex; align-items: center; gap: 6px;
-      font-size: 12px; font-weight: 600; letter-spacing: 0.8px;
-      text-transform: uppercase; color: var(--brown-light);
-      margin-bottom: 24px;
+    .hero-logo {
+      display: flex; align-items: center; justify-content: center;
+      gap: 10px;
+      margin-bottom: 36px;
     }
-    .hero-eyebrow::before, .hero-eyebrow::after {
-      content: '';
-      display: block; width: 28px; height: 1px;
-      background: var(--border);
+    .hero-logo .logo-text {
+      font-size: 22px; font-weight: 800;
+      letter-spacing: -0.5px; color: var(--brown);
     }
     .hero h1 {
-      font-size: 64px; font-weight: 800;
-      letter-spacing: -2px; line-height: 1.05;
-      color: var(--brown); margin-bottom: 20px;
+      font-size: 44px; font-weight: 800;
+      letter-spacing: -1.5px; line-height: 1.15;
+      color: var(--text); margin-bottom: 20px;
     }
-    .hero h1 span { color: var(--brown-light); }
+    .hero-slogan {
+      font-size: 20px; font-weight: 500;
+      color: #444;
+      margin-bottom: 14px;
+    }
     .hero-sub {
-      font-size: 17px; color: var(--text-muted);
-      max-width: 480px; margin: 0 auto 44px;
-      line-height: 1.65; font-weight: 400;
+      font-size: 16px; color: var(--text-muted);
+      max-width: 580px; margin: 0 auto 32px;
+      line-height: 1.7; font-weight: 400;
+    }
+    .hero-pillars {
+      display: flex; align-items: center; justify-content: center;
+      gap: 24px;
+      margin-bottom: 48px;
+    }
+    .hero-pillar {
+      font-size: 13px; font-weight: 600;
+      color: var(--brown-mid);
+      letter-spacing: 0.2px;
+    }
+    .hero-pillar-dot {
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      background: var(--border);
+      flex-shrink: 0;
     }
 
     /* Search */
@@ -411,7 +429,8 @@
 
     /* ─── RESPONSIVE ─── */
     @media (max-width: 960px) {
-      .hero h1 { font-size: 46px; }
+      .hero h1 { font-size: 36px; letter-spacing: -1px; }
+      .hero-slogan { font-size: 18px; }
       .grid-3 { grid-template-columns: 1fr 1fr; }
       .features-grid { grid-template-columns: 1fr 1fr; }
       .split { grid-template-columns: 1fr; }
@@ -421,8 +440,14 @@
     @media (max-width: 620px) {
       nav { padding: 0 20px; }
       .nav-links { display: none; }
-      .hero { padding: 60px 20px 56px; }
-      .hero h1 { font-size: 36px; letter-spacing: -1px; }
+      .hero { padding: 52px 20px 48px; }
+      .hero h1 { font-size: 28px; letter-spacing: -0.8px; line-height: 1.2; }
+      .hero-slogan { font-size: 16px; }
+      .hero-sub { font-size: 14px; margin-bottom: 24px; }
+      .hero-pillars { gap: 14px; margin-bottom: 36px; }
+      .hero-pillar { font-size: 12px; }
+      .hero-logo svg { width: 30px; height: 30px; }
+      .hero-logo .logo-text { font-size: 19px; }
       .section { padding: 0 20px 64px; }
       .grid-3 { grid-template-columns: 1fr; }
       .features-grid { grid-template-columns: 1fr; }
@@ -463,9 +488,24 @@
 
 <!-- HERO -->
 <section class="hero">
-  <div class="hero-eyebrow">Immobilier simplifié</div>
-  <h1>Trouvez, louez,<br><span>gérez.</span></h1>
-  <p class="hero-sub">Une seule plateforme pour toute votre vie locative — de la recherche au paiement du loyer.</p>
+  <div class="hero-logo">
+    <svg width="36" height="36" viewBox="0 0 32 32" fill="none">
+      <path d="M16 3L29 14V29H3V14L16 3Z" stroke="#3D2E22" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M16 10.5C13.8 10.5 12 12.3 12 14.5C12 17.2 16 22.5 16 22.5C16 22.5 20 17.2 20 14.5C20 12.3 18.2 10.5 16 10.5Z" stroke="#3D2E22" stroke-width="1.6"/>
+      <circle cx="16" cy="14.5" r="1.8" fill="#3D2E22"/>
+    </svg>
+    <span class="logo-text">Drify</span>
+  </div>
+  <h1>La solution digitale pensée pour les locataires et conçue pour les propriétaires</h1>
+  <p class="hero-slogan">Drify simplifie votre quotidien immobilier.</p>
+  <p class="hero-sub">De la recherche à la gestion, vivez une expérience 100% digitale.</p>
+  <div class="hero-pillars">
+    <span class="hero-pillar">Recherche intuitive</span>
+    <span class="hero-pillar-dot"></span>
+    <span class="hero-pillar">Bail sécurisé</span>
+    <span class="hero-pillar-dot"></span>
+    <span class="hero-pillar">Gestion simplifiée</span>
+  </div>
 
   <div class="search-wrap">
     <div class="search-tab">
