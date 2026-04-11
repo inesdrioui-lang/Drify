@@ -153,7 +153,7 @@
     /* Slider */
     .slider-wrap { position: relative; padding: 4px 0 20px; }
     .slider-value {
-      display: flex; justify-content: space-between;
+      display: flex; justify-content: flex-start;
       font-size: 13px; font-weight: 700; color: var(--brown); margin-bottom: 10px;
     }
     .slider-track {
@@ -445,6 +445,8 @@
         <button class="type-btn" data-type="studio" onclick="toggleType(this)">Studio</button>
         <button class="type-btn" data-type="loft" onclick="toggleType(this)">Loft</button>
         <button class="type-btn" data-type="room" onclick="toggleType(this)">Chambre</button>
+        <button class="type-btn" data-type="garage" onclick="toggleType(this)">Garage / Box</button>
+        <button class="type-btn" data-type="parking" onclick="toggleType(this)">Parking</button>
       </div>
     </div>
 
@@ -454,7 +456,12 @@
       <span class="filter-label">Budget maximum</span>
       <div class="slider-wrap">
         <div class="slider-value">
-          <span id="priceVal">2 500 €/mois</span>
+          <div class="surface-input-wrap">
+            <input type="number" id="priceInput" class="surface-number-input"
+              min="0" max="5000" value="2500" style="width:72px"
+              oninput="syncPriceInput(this.value)" />
+            <span class="surface-unit" id="priceUnit">€/mois</span>
+          </div>
         </div>
         <div class="slider-track">
           <div class="slider-fill" id="priceFill" style="left:0;right:50%"></div>
@@ -560,6 +567,10 @@ const LISTINGS = [
   { id:13, title:"Appartement T4 — Côte Pavée", type:"apartment", city:"Côte Pavée", lat:43.590, lng:1.468, price:295000, charges:0, surface:92, rooms:4, bedrooms:3, furnished:false, dpe:"C", badge:"Vente", img:"#EDE5DA" },
   { id:14, title:"Maison 5 pièces — Lardenne", type:"house", city:"Lardenne", lat:43.604, lng:1.390, price:420000, charges:0, surface:130, rooms:5, bedrooms:4, furnished:false, dpe:"B", badge:"Vente", img:"#E9E0D5" },
   { id:15, title:"Studio investissement — Jean Jaurès", type:"studio", city:"Jean Jaurès", lat:43.607, lng:1.451, price:98000, charges:0, surface:24, rooms:1, bedrooms:0, furnished:true, dpe:"D", badge:"Vente", img:"#F2EAE0" },
+  { id:16, title:"Box fermé — Saint-Cyprien", type:"garage", city:"Saint-Cyprien", lat:43.599, lng:1.434, price:90, charges:0, surface:12, rooms:1, bedrooms:0, furnished:false, dpe:"C", badge:"Location", img:"#E8DDD0" },
+  { id:17, title:"Place de parking — Capitole", type:"parking", city:"Capitole", lat:43.605, lng:1.443, price:60, charges:0, surface:12, rooms:1, bedrooms:0, furnished:false, dpe:"C", badge:"Location", img:"#EDE5DA" },
+  { id:18, title:"Garage double — Lardenne", type:"garage", city:"Lardenne", lat:43.603, lng:1.387, price:25000, charges:0, surface:30, rooms:1, bedrooms:0, furnished:false, dpe:"C", badge:"Vente", img:"#E9E0D5" },
+  { id:19, title:"Parking couvert — Jean Jaurès", type:"parking", city:"Jean Jaurès", lat:43.606, lng:1.453, price:18000, charges:0, surface:12, rooms:1, bedrooms:0, furnished:false, dpe:"C", badge:"Vente", img:"#F2EAE0" },
 ];
 
 // ─── STATE
@@ -573,15 +584,18 @@ let state = {
 function syncPriceSlider() {
   const isSale = state.transactionType === 'sale';
   const range = document.getElementById('priceRange');
+  const input = document.getElementById('priceInput');
   if (isSale) {
     range.min = 0; range.max = 2000000; range.step = 10000; range.value = 500000;
+    input.min = 0; input.max = 2000000; input.step = 10000; input.value = 500000;
     state.maxPrice = 500000;
-    document.getElementById('priceVal').textContent = (500000).toLocaleString('fr-FR') + ' €';
+    document.getElementById('priceUnit').textContent = '€';
     document.getElementById('priceFill').style.cssText = 'left:0;right:75%';
   } else {
     range.min = 0; range.max = 5000; range.step = 50; range.value = 2500;
+    input.min = 0; input.max = 5000; input.step = 50; input.value = 2500;
     state.maxPrice = 2500;
-    document.getElementById('priceVal').textContent = '2 500 €/mois';
+    document.getElementById('priceUnit').textContent = '€/mois';
     document.getElementById('priceFill').style.cssText = 'left:0;right:50%';
   }
 }
@@ -664,7 +678,7 @@ function applyFilters() {
     if (state.transactionType === 'rent' && l.badge !== 'Location') return false;
     if (state.transactionType === 'sale' && l.badge !== 'Vente') return false;
     if (state.type !== 'all' && l.type !== state.type) return false;
-    if (state.transactionType === 'rent' && l.price > state.maxPrice) return false;
+    if (l.price > state.maxPrice) return false;
     if (l.surface < state.minSurface) return false;
     if (state.minRooms > 0 && l.rooms < state.minRooms) return false;
     if (state.furnished && !l.furnished) return false;
@@ -715,8 +729,7 @@ function toggleDpe(btn) {
 function updateSlider(type, value) {
   if (type === 'price') {
     state.maxPrice = parseInt(value);
-    const suffix = state.transactionType === 'sale' ? ' €' : ' €/mois';
-    document.getElementById('priceVal').textContent = parseInt(value).toLocaleString('fr-FR') + suffix;
+    document.getElementById('priceInput').value = parseInt(value);
     const range = document.getElementById('priceRange');
     const pct = ((value - range.min) / (range.max - range.min)) * 100;
     document.getElementById('priceFill').style.cssText = `left:0;right:${100-pct}%`;
@@ -738,21 +751,29 @@ function syncSurfaceInput(value) {
   applyFilters();
 }
 
+function syncPriceInput(value) {
+  const range = document.getElementById('priceRange');
+  const v = Math.min(parseInt(range.max), Math.max(parseInt(range.min), parseInt(value) || 0));
+  state.maxPrice = v;
+  range.value = v;
+  const pct = ((v - parseInt(range.min)) / (parseInt(range.max) - parseInt(range.min))) * 100;
+  document.getElementById('priceFill').style.cssText = `left:0;right:${100-pct}%`;
+  applyFilters();
+}
+
 function resetFilters() {
   const isSale = state.transactionType === 'sale';
   const defaultPrice = isSale ? 500000 : 2500;
-  const priceLabel = isSale
-    ? (500000).toLocaleString('fr-FR') + ' €'
-    : '2 500 €/mois';
   state = { ...state, type:'all', maxPrice: defaultPrice, minSurface: 0, minRooms:0, furnished:false, dpe:'all' };
   document.querySelectorAll('.type-btn').forEach((b,i) => b.classList.toggle('active', i===0));
   document.querySelectorAll('.room-btn[data-rooms]').forEach((b,i) => b.classList.toggle('active', i===0));
   document.querySelectorAll('.room-btn[data-dpe]').forEach((b,i) => b.classList.toggle('active', i===0));
   document.getElementById('furnishedToggle').classList.remove('on');
   document.getElementById('priceRange').value = defaultPrice;
+  document.getElementById('priceInput').value = defaultPrice;
+  document.getElementById('priceUnit').textContent = isSale ? '€' : '€/mois';
   document.getElementById('surfaceRange').value = 0;
   document.getElementById('surfaceInput').value = 0;
-  document.getElementById('priceVal').textContent = priceLabel;
   document.getElementById('priceFill').style.cssText = isSale ? 'left:0;right:75%' : 'left:0;right:50%';
   document.getElementById('surfaceFill').style.cssText = 'left:0;right:100%';
   applyFilters();
