@@ -510,7 +510,7 @@
     <div class="filter-group">
       <div class="toggle-row">
         <span>Meublé uniquement</span>
-        <button class="toggle" id="furnishedToggle" onclick="this.classList.toggle('on'); applyFilters()"></button>
+        <button class="toggle" id="furnishedToggle" onclick="this.classList.toggle('on'); state.furnished = this.classList.contains('on'); applyFilters()"></button>
       </div>
     </div>
 
