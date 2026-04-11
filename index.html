@@ -161,6 +161,21 @@
     .search-tab-btn:hover:not(.active) {
       background: rgba(61,46,34,0.04);
     }
+    .search-tab .type-dropdown { position: relative; }
+    .search-tab .type-dropdown-btn { display: flex; align-items: center; gap: 8px; }
+    .search-tab .type-dropdown-menu {
+      display: none; position: absolute; top: calc(100% + 4px); left: 0;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 8px; box-shadow: 0 4px 16px rgba(61,46,34,0.12);
+      list-style: none; padding: 4px; margin: 0; min-width: 140px; z-index: 200;
+    }
+    .search-tab .type-dropdown-menu.open { display: block; }
+    .search-tab .type-dropdown-menu li {
+      padding: 8px 14px; font-size: 13px; font-weight: 600; color: var(--brown);
+      border-radius: 6px; cursor: pointer; transition: background .12s;
+    }
+    .search-tab .type-dropdown-menu li:hover { background: var(--bg-soft); }
+    .search-tab .type-dropdown-menu li.active { background: var(--brown); color: #fff; }
     .search-input {
       flex: 1; padding: 0 20px; height: 52px;
       border: none; outline: none; background: transparent;
@@ -506,8 +521,16 @@
 
   <div class="search-wrap">
     <div class="search-tab">
-      <button class="search-tab-btn active" id="btnLocation" onclick="setSearchType('location')">Location</button>
-      <button class="search-tab-btn" id="btnVente" onclick="setSearchType('vente')">Vente</button>
+      <div class="type-dropdown" id="typeDropdown">
+        <button class="search-tab-btn type-dropdown-btn" id="typeDropdownBtn">
+          <span id="typeDropdownLabel">Location</span>
+          <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path fill="#5C4433" d="M0 0l5 6 5-6z"/></svg>
+        </button>
+        <ul class="type-dropdown-menu" id="typeDropdownMenu">
+          <li class="active" data-value="location">Location</li>
+          <li data-value="vente">Vente</li>
+        </ul>
+      </div>
     </div>
     <input id="searchQueryInput" class="search-input" type="text" placeholder="Ville, quartier, code postal…" />
     <button class="search-btn" onclick="doSearch()">
@@ -782,11 +805,23 @@
 <script>
 let currentSearchType = 'location';
 
-function setSearchType(type) {
-  currentSearchType = type;
-  document.getElementById('btnLocation').classList.toggle('active', type === 'location');
-  document.getElementById('btnVente').classList.toggle('active', type === 'vente');
-}
+document.getElementById('typeDropdownBtn').addEventListener('click', function(e) {
+  e.stopPropagation();
+  document.getElementById('typeDropdownMenu').classList.toggle('open');
+});
+document.querySelectorAll('#typeDropdownMenu li').forEach(li => {
+  li.addEventListener('click', function() {
+    currentSearchType = this.dataset.value;
+    document.getElementById('typeDropdownLabel').textContent = this.textContent;
+    document.querySelectorAll('#typeDropdownMenu li').forEach(i => i.classList.remove('active'));
+    this.classList.add('active');
+    document.getElementById('typeDropdownMenu').classList.remove('open');
+  });
+});
+document.addEventListener('click', function() {
+  const menu = document.getElementById('typeDropdownMenu');
+  if (menu) menu.classList.remove('open');
+});
 
 function doSearch() {
   const type = currentSearchType === 'vente' ? 'sale' : 'rent';
