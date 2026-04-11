@@ -68,15 +68,27 @@
       border-radius: 10px; overflow: hidden; flex: 1; max-width: 560px;
       box-shadow: 0 1px 6px rgba(61,46,34,0.06);
     }
-    .search-inline select {
-      padding: 0 14px; height: 40px; border: none; background: transparent;
+    .type-dropdown { position: relative; min-width: 110px; border-right: 1px solid var(--border-soft); flex-shrink: 0; }
+    .type-dropdown-btn {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 10px 0 14px; height: 40px; width: 100%;
+      border: none; background: transparent;
       font-size: 13px; font-weight: 600; color: var(--brown);
-      border-right: 1px solid var(--border-soft); min-width: 110px;
-      appearance: none; cursor: pointer; outline: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath fill='%235C4433' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
-      background-repeat: no-repeat; background-position: right 10px center;
-      padding-right: 28px; font-family: inherit;
+      cursor: pointer; outline: none; font-family: inherit; gap: 8px;
     }
+    .type-dropdown-menu {
+      display: none; position: absolute; top: calc(100% + 4px); left: 0;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 8px; box-shadow: 0 4px 16px rgba(61,46,34,0.12);
+      list-style: none; padding: 4px; margin: 0; min-width: 130px; z-index: 200;
+    }
+    .type-dropdown-menu.open { display: block; }
+    .type-dropdown-menu li {
+      padding: 8px 14px; font-size: 13px; font-weight: 600; color: var(--brown);
+      border-radius: 6px; cursor: pointer; transition: background .12s;
+    }
+    .type-dropdown-menu li:hover { background: var(--bg-soft); }
+    .type-dropdown-menu li.active { background: var(--brown); color: #fff; }
     .search-inline input {
       flex: 1; padding: 0 14px; height: 40px; border: none; outline: none;
       font-size: 13px; color: var(--text); background: transparent; font-family: inherit;
@@ -366,10 +378,16 @@
 <!-- TOP BAR -->
 <div class="topbar">
   <div class="search-inline">
-    <select id="searchType">
-      <option value="rent">Location</option>
-      <option value="sale">Vente</option>
-    </select>
+    <div class="type-dropdown" id="typeDropdown">
+      <button class="type-dropdown-btn" id="typeDropdownBtn">
+        <span id="typeDropdownLabel">Location</span>
+        <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path fill="#5C4433" d="M0 0l5 6 5-6z"/></svg>
+      </button>
+      <ul class="type-dropdown-menu" id="typeDropdownMenu">
+        <li class="active" data-value="rent">Location</li>
+        <li data-value="sale">Vente</li>
+      </ul>
+    </div>
     <input type="text" id="searchInput" placeholder="Ville, quartier, code postal…" value="Toulouse" />
     <button onclick="applyFilters()">Rechercher</button>
   </div>
@@ -527,8 +545,27 @@ const LISTINGS = [
 let state = {
   type: 'all', maxPrice: 2500, minSurface: 20, minRooms: 0,
   furnished: false, dpe: 'all', sort: 'recent',
-  view: 'list', filtered: [...LISTINGS]
+  view: 'list', filtered: [...LISTINGS], transactionType: 'rent'
 };
+
+// ─── TYPE DROPDOWN
+document.getElementById('typeDropdownBtn').addEventListener('click', function(e) {
+  e.stopPropagation();
+  document.getElementById('typeDropdownMenu').classList.toggle('open');
+});
+document.querySelectorAll('#typeDropdownMenu li').forEach(li => {
+  li.addEventListener('click', function() {
+    state.transactionType = this.dataset.value;
+    document.getElementById('typeDropdownLabel').textContent = this.textContent;
+    document.querySelectorAll('#typeDropdownMenu li').forEach(i => i.classList.remove('active'));
+    this.classList.add('active');
+    document.getElementById('typeDropdownMenu').classList.remove('open');
+    applyFilters();
+  });
+});
+document.addEventListener('click', function() {
+  document.getElementById('typeDropdownMenu').classList.remove('open');
+});
 
 // ─── MAP
 let map, markers = [], markerMap = new Map();
@@ -573,6 +610,8 @@ function applyFilters() {
   state.sort = sort;
 
   let result = LISTINGS.filter(l => {
+    if (state.transactionType === 'rent' && l.badge !== 'Location') return false;
+    if (state.transactionType === 'sale' && l.badge !== 'Vente') return false;
     if (state.type !== 'all' && l.type !== state.type) return false;
     if (l.price > state.maxPrice) return false;
     if (l.surface < state.minSurface) return false;
@@ -750,8 +789,13 @@ function dpeTextColor(dpe) {
 (function() {
   const params = new URLSearchParams(window.location.search);
   if (params.get('type')) {
-    const sel = document.getElementById('searchType');
-    if (sel) sel.value = params.get('type');
+    const val = params.get('type');
+    const label = val === 'sale' ? 'Vente' : 'Location';
+    state.transactionType = val;
+    document.getElementById('typeDropdownLabel').textContent = label;
+    document.querySelectorAll('#typeDropdownMenu li').forEach(li => {
+      li.classList.toggle('active', li.dataset.value === val);
+    });
   }
   if (params.get('q')) {
     const inp = document.getElementById('searchInput');
