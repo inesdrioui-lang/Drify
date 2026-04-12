@@ -190,14 +190,27 @@
     .surface-unit { font-size: 13px; font-weight: 700; color: var(--brown); }
     /* DPE slider */
     .dpe-badge {
-      display: inline-block; padding: 2px 10px; border-radius: 6px;
-      font-size: 13px; font-weight: 700; letter-spacing: 0.5px;
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 6px;
+      font-size: 13px; font-weight: 800; letter-spacing: 0.5px;
     }
     .dpe-labels {
       display: flex; justify-content: space-between;
-      margin-top: 10px; font-size: 11px; font-weight: 700;
-      text-shadow: 0 0 4px rgba(0,0,0,0.18);
+      margin-top: 10px;
     }
+    .dpe-labels span {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 24px; height: 24px; border-radius: 4px;
+      font-size: 11px; font-weight: 800;
+    }
+    /* Palette officielle DPE */
+    .dpe-a { background: #1a9e3f; color: #333333; }
+    .dpe-b { background: #4cb847; color: #333333; }
+    .dpe-c { background: #c3d52a; color: #333333; }
+    .dpe-d { background: #f5e600; color: #333333; }
+    .dpe-e { background: #f0a500; color: #333333; }
+    .dpe-f { background: #e06b00; color: #333333; }
+    .dpe-g { background: #cc0000; color: #333333; }
     /* Rooms buttons */
     .rooms-btns { display: flex; gap: 6px; flex-wrap: wrap; }
     .room-btn {
@@ -530,7 +543,7 @@
       <span class="filter-label">DPE maximum</span>
       <div class="slider-wrap" style="padding-bottom:28px">
         <div class="slider-value">
-          <span id="dpeVal" class="dpe-badge" style="background:#FF6600;color:#fff">F</span>
+          <span id="dpeVal" class="dpe-badge dpe-f">F</span>
         </div>
         <div class="slider-track">
           <div class="slider-fill" id="dpeFill" style="left:0;right:0%"></div>
@@ -744,8 +757,7 @@ function updateDpeSlider(value) {
   const letter = DPE_SCALE[idx];
   const badge = document.getElementById('dpeVal');
   badge.textContent = letter;
-  badge.style.background = DPE_BG[letter];
-  badge.style.color = DPE_TEXT[letter];
+  badge.className = `dpe-badge dpe-${letter.toLowerCase()}`;
   const range = document.getElementById('dpeRange');
   const pct = parseInt(range.max) > 0 ? (idx / parseInt(range.max)) * 100 : 0;
   document.getElementById('dpeFill').style.cssText = `left:0;right:${100-pct}%`;
@@ -764,11 +776,10 @@ function syncDpeSlider() {
   const letter = DPE_SCALE[maxIdx];
   const badge = document.getElementById('dpeVal');
   badge.textContent = letter;
-  badge.style.background = DPE_BG[letter];
-  badge.style.color = DPE_TEXT[letter];
+  badge.className = `dpe-badge dpe-${letter.toLowerCase()}`;
   document.getElementById('dpeFill').style.cssText = 'left:0;right:0%';
   document.getElementById('dpeLabels').innerHTML = labels
-    .map(l => `<span style="color:${DPE_BG[l]}">${l}</span>`).join('');
+    .map(l => `<span class="dpe-${l.toLowerCase()}">${l}</span>`).join('');
 }
 
 function updateSlider(type, value) {
@@ -819,8 +830,7 @@ function resetFilters() {
   const dpeLetter = DPE_SCALE[dpeMax];
   const dpeBadge = document.getElementById('dpeVal');
   dpeBadge.textContent = dpeLetter;
-  dpeBadge.style.background = DPE_BG[dpeLetter];
-  dpeBadge.style.color = DPE_TEXT[dpeLetter];
+  dpeBadge.className = `dpe-badge dpe-${dpeLetter.toLowerCase()}`;
   document.getElementById('dpeRange').value = dpeMax;
   document.getElementById('dpeFill').style.cssText = 'left:0;right:0%';
   document.getElementById('furnishedToggle').classList.remove('on');
@@ -924,11 +934,11 @@ function formatPrice(p) {
 }
 
 const DPE_SCALE = ['A','B','C','D','E','F','G'];
-const DPE_BG    = { A:'#319834', B:'#33CC33', C:'#CCEE33', D:'#FFFF00', E:'#FFCC00', F:'#FF6600', G:'#FF0000' };
-const DPE_TEXT  = { A:'#fff',    B:'#fff',    C:'#3D2E22', D:'#3D2E22', E:'#3D2E22', F:'#fff',    G:'#fff'    };
+const DPE_BG    = { A:'#1a9e3f', B:'#4cb847', C:'#c3d52a', D:'#f5e600', E:'#f0a500', F:'#e06b00', G:'#cc0000' };
+const DPE_TEXT  = { A:'#333333', B:'#333333', C:'#333333', D:'#333333', E:'#333333', F:'#333333', G:'#333333' };
 
 function dpeColor(dpe)     { return DPE_BG[dpe]   || '#f3f4f6'; }
-function dpeTextColor(dpe) { return DPE_TEXT[dpe]  || '#374151'; }
+function dpeTextColor(dpe) { return DPE_TEXT[dpe]  || '#333333'; }
 
 // ─── INIT
 (function() {
