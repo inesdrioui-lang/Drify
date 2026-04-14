@@ -153,8 +153,9 @@
     /* Slider */
     .slider-wrap { position: relative; padding: 4px 0 20px; }
     .slider-value {
-      display: flex; justify-content: space-between;
-      font-size: 13px; font-weight: 700; color: var(--brown); margin-bottom: 10px;
+      display: flex; justify-content: flex-start; align-items: baseline; gap: 8px;
+      font-size: 13px; font-weight: 700; color: var(--brown);
+      margin: 0 4px 10px;
     }
     .slider-track {
       position: relative; height: 4px; background: var(--border);
@@ -196,9 +197,19 @@
     }
     .dpe-tick {
       display: inline-flex; align-items: center; justify-content: center;
-      width: 22px; height: 18px; border-radius: 4px;
-      font-size: 11px; font-weight: 800; opacity: 0.7;
+      width: 24px; height: 24px; border-radius: 6px;
+      font-size: 12px; font-weight: 800;
     }
+    /* Budget input manuel */
+    .price-input-wrap { display: flex; align-items: baseline; gap: 4px; }
+    .price-number-input {
+      width: 88px; border: none; border-bottom: 1.5px solid var(--border);
+      background: transparent; font-size: 13px; font-weight: 700;
+      color: var(--brown); font-family: inherit; outline: none;
+      text-align: left; padding: 0 2px 1px;
+    }
+    .price-number-input:focus { border-bottom-color: var(--brown); }
+    .price-unit { font-size: 13px; font-weight: 700; color: var(--brown); }
     /* Surface input manuel */
     .surface-input-wrap { display: flex; align-items: baseline; gap: 4px; }
     .surface-number-input {
@@ -478,7 +489,11 @@
       <span class="filter-label">Budget maximum</span>
       <div class="slider-wrap">
         <div class="slider-value">
-          <span id="priceVal">2 500 €/mois</span>
+          <div class="price-input-wrap">
+            <input type="text" id="priceInput" class="price-number-input"
+              value="2 500" oninput="syncPriceInput(this.value)" />
+            <span class="price-unit" id="priceUnit">€/mois</span>
+          </div>
         </div>
         <div class="slider-track">
           <div class="slider-fill" id="priceFill" style="left:0;right:50%"></div>
@@ -612,12 +627,14 @@ function syncPriceSlider() {
   if (isSale) {
     range.min = 0; range.max = 2000000; range.step = 10000; range.value = 500000;
     state.maxPrice = 500000;
-    document.getElementById('priceVal').textContent = (500000).toLocaleString('fr-FR') + ' €';
+    document.getElementById('priceInput').value = (500000).toLocaleString('fr-FR');
+    document.getElementById('priceUnit').textContent = '€';
     document.getElementById('priceFill').style.cssText = 'left:0;right:75%';
   } else {
     range.min = 0; range.max = 5000; range.step = 50; range.value = 2500;
     state.maxPrice = 2500;
-    document.getElementById('priceVal').textContent = '2 500 €/mois';
+    document.getElementById('priceInput').value = (2500).toLocaleString('fr-FR');
+    document.getElementById('priceUnit').textContent = '€/mois';
     document.getElementById('priceFill').style.cssText = 'left:0;right:50%';
   }
 }
@@ -778,8 +795,7 @@ function syncDpeSlider() {
 function updateSlider(type, value) {
   if (type === 'price') {
     state.maxPrice = parseInt(value);
-    const suffix = state.transactionType === 'sale' ? ' €' : ' €/mois';
-    document.getElementById('priceVal').textContent = parseInt(value).toLocaleString('fr-FR') + suffix;
+    document.getElementById('priceInput').value = parseInt(value).toLocaleString('fr-FR');
     const range = document.getElementById('priceRange');
     const pct = ((value - range.min) / (range.max - range.min)) * 100;
     document.getElementById('priceFill').style.cssText = `left:0;right:${100-pct}%`;
@@ -801,12 +817,23 @@ function syncSurfaceInput(value) {
   applyFilters();
 }
 
+function syncPriceInput(value) {
+  const isSale = state.transactionType === 'sale';
+  const maxVal = isSale ? 2000000 : 5000;
+  const step = isSale ? 10000 : 50;
+  const raw = parseInt(value.replace(/\s/g, '').replace(/[^\d]/g, '')) || 0;
+  const clamped = Math.min(maxVal, Math.max(0, Math.round(raw / step) * step));
+  state.maxPrice = clamped;
+  const range = document.getElementById('priceRange');
+  range.value = clamped;
+  const pct = ((clamped - range.min) / (range.max - range.min)) * 100;
+  document.getElementById('priceFill').style.cssText = `left:0;right:${100-pct}%`;
+  applyFilters();
+}
+
 function resetFilters() {
   const isSale = state.transactionType === 'sale';
   const defaultPrice = isSale ? 500000 : 2500;
-  const priceLabel = isSale
-    ? (500000).toLocaleString('fr-FR') + ' €'
-    : '2 500 €/mois';
   state = { ...state, type:'all', maxPrice: defaultPrice, minSurface: 0, minRooms:0, furnished:false, dpeMax: isSale ? 6 : 5 };
   document.querySelectorAll('.type-btn').forEach((b,i) => b.classList.toggle('active', i===0));
   document.querySelectorAll('.room-btn[data-rooms]').forEach((b,i) => b.classList.toggle('active', i===0));
@@ -815,7 +842,8 @@ function resetFilters() {
   document.getElementById('priceRange').value = defaultPrice;
   document.getElementById('surfaceRange').value = 0;
   document.getElementById('surfaceInput').value = 0;
-  document.getElementById('priceVal').textContent = priceLabel;
+  document.getElementById('priceInput').value = defaultPrice.toLocaleString('fr-FR');
+  document.getElementById('priceUnit').textContent = isSale ? '€' : '€/mois';
   document.getElementById('priceFill').style.cssText = isSale ? 'left:0;right:75%' : 'left:0;right:50%';
   document.getElementById('surfaceFill').style.cssText = 'left:0;right:100%';
   applyFilters();
