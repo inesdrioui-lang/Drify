@@ -41,18 +41,18 @@
     }
     .nav-links a:hover { color: var(--brown); background: var(--bg-soft); }
     .nav-links a.active { color: var(--brown); font-weight: 600; }
-    .nav-end { display: flex; gap: 8px; }
+    .nav-end { display: flex; gap: 8px; flex-shrink: 0; }
     .btn-ghost {
       padding: 7px 16px; border-radius: 8px; font-size: 13px; font-weight: 600;
       cursor: pointer; text-decoration: none; color: var(--brown-mid);
       border: 1px solid var(--border); background: transparent;
-      transition: background .15s; font-family: inherit;
+      transition: background .15s; font-family: inherit; white-space: nowrap;
     }
     .btn-ghost:hover { background: var(--bg-soft); }
     .btn-primary {
       padding: 7px 18px; border-radius: 8px; font-size: 13px; font-weight: 600;
       cursor: pointer; text-decoration: none; color: #fff; background: var(--brown);
-      border: none; transition: opacity .15s; font-family: inherit;
+      border: none; transition: opacity .15s; font-family: inherit; white-space: nowrap;
     }
     .btn-primary:hover { opacity: .85; }
 
