@@ -153,19 +153,19 @@
     /* Slider */
     .slider-wrap { position: relative; padding: 4px 0 20px; }
     .slider-value {
-      display: flex; justify-content: flex-start;
+      display: flex; justify-content: space-between;
       font-size: 13px; font-weight: 700; color: var(--brown); margin-bottom: 10px;
     }
     .slider-track {
       position: relative; height: 4px; background: var(--border);
-      border-radius: 2px; margin: 0;
+      border-radius: 2px; margin: 0 4px;
     }
     .slider-fill {
       position: absolute; height: 100%; background: var(--brown);
       border-radius: 2px; pointer-events: none;
     }
     input[type=range] {
-      position: absolute; width: 100%; left: 0;
+      position: absolute; width: calc(100% + 8px); left: -4px;
       top: -6px; appearance: none; background: transparent;
       pointer-events: none; height: 16px;
     }
@@ -181,36 +181,13 @@
       width: 52px; border: none; border-bottom: 1.5px solid var(--border);
       background: transparent; font-size: 13px; font-weight: 700;
       color: var(--brown); font-family: inherit; outline: none;
-      text-align: left; padding: 0 2px 1px;
+      text-align: right; padding: 0 2px 1px;
       -moz-appearance: textfield;
     }
     .surface-number-input:focus { border-bottom-color: var(--brown); }
     .surface-number-input::-webkit-outer-spin-button,
     .surface-number-input::-webkit-inner-spin-button { -webkit-appearance: none; }
     .surface-unit { font-size: 13px; font-weight: 700; color: var(--brown); }
-    /* DPE slider */
-    .dpe-badge {
-      display: inline-flex; align-items: center; justify-content: center;
-      width: 32px; height: 32px; border-radius: 6px;
-      font-size: 13px; font-weight: 800; letter-spacing: 0.5px;
-    }
-    .dpe-labels {
-      display: flex; justify-content: space-between;
-      margin-top: 10px;
-    }
-    .dpe-labels span {
-      display: inline-flex; align-items: center; justify-content: center;
-      width: 24px; height: 24px; border-radius: 4px;
-      font-size: 11px; font-weight: 800;
-    }
-    /* Palette officielle DPE */
-    .dpe-a { background: #1a9e3f; color: #333333; }
-    .dpe-b { background: #4cb847; color: #333333; }
-    .dpe-c { background: #c3d52a; color: #333333; }
-    .dpe-d { background: #f5e600; color: #333333; }
-    .dpe-e { background: #f0a500; color: #333333; }
-    .dpe-f { background: #e06b00; color: #333333; }
-    .dpe-g { background: #cc0000; color: #333333; }
     /* Rooms buttons */
     .rooms-btns { display: flex; gap: 6px; flex-wrap: wrap; }
     .room-btn {
@@ -404,7 +381,7 @@
     <a href="recherche.html" class="active">Rechercher</a>
     <a href="publier.html">Publier</a>
     <a href="messages.html">Messages</a>
-    <a href="#">Favoris</a>
+    <a href="favoris.html">Favoris</a>
   </div>
   <div class="nav-end">
     <a href="#" class="btn-ghost">Se connecter</a>
@@ -468,8 +445,6 @@
         <button class="type-btn" data-type="studio" onclick="toggleType(this)">Studio</button>
         <button class="type-btn" data-type="loft" onclick="toggleType(this)">Loft</button>
         <button class="type-btn" data-type="room" onclick="toggleType(this)">Chambre</button>
-        <button class="type-btn" data-type="garage" onclick="toggleType(this)">Garage / Box</button>
-        <button class="type-btn" data-type="parking" onclick="toggleType(this)">Parking</button>
       </div>
     </div>
 
@@ -479,12 +454,7 @@
       <span class="filter-label">Budget maximum</span>
       <div class="slider-wrap">
         <div class="slider-value">
-          <div class="surface-input-wrap">
-            <input type="text" id="priceInput" class="surface-number-input"
-              value="2 500" style="width:72px"
-              oninput="syncPriceInput(this.value)" />
-            <span class="surface-unit" id="priceUnit">€/mois</span>
-          </div>
+          <span id="priceVal">2 500 €/mois</span>
         </div>
         <div class="slider-track">
           <div class="slider-fill" id="priceFill" style="left:0;right:50%"></div>
@@ -501,8 +471,8 @@
       <div class="slider-wrap">
         <div class="slider-value">
           <div class="surface-input-wrap">
-            <input type="text" id="surfaceInput" class="surface-number-input"
-              value="0" oninput="syncSurfaceInput(this.value)" />
+            <input type="number" id="surfaceInput" class="surface-number-input"
+              min="0" max="500" value="0" oninput="syncSurfaceInput(this.value)" />
             <span class="surface-unit">m²</span>
           </div>
         </div>
@@ -533,31 +503,19 @@
     <div class="filter-group">
       <div class="toggle-row">
         <span>Meublé uniquement</span>
-        <button class="toggle" id="furnishedToggle" onclick="this.classList.toggle('on'); state.furnished = this.classList.contains('on'); applyFilters()"></button>
+        <button class="toggle" id="furnishedToggle" onclick="this.classList.toggle('on'); applyFilters()"></button>
       </div>
     </div>
 
     <div class="filter-divider"></div>
 
     <div class="filter-group">
-      <span class="filter-label">DPE maximum</span>
-      <div class="slider-wrap" style="padding-bottom:28px">
-        <div class="slider-value">
-          <span id="dpeVal" class="dpe-badge dpe-f">F</span>
-        </div>
-        <div class="slider-track">
-          <div class="slider-fill" id="dpeFill" style="left:0;right:0%"></div>
-          <input type="range" id="dpeRange" min="0" max="5" value="5" step="1"
-            oninput="updateDpeSlider(this.value)" />
-        </div>
-        <div class="dpe-labels" id="dpeLabels">
-          <span style="color:#319834">A</span>
-          <span style="color:#33CC33">B</span>
-          <span style="color:#CCEE33">C</span>
-          <span style="color:#FFCC00">D</span>
-          <span style="color:#FFCC00">E</span>
-          <span style="color:#FF6600">F</span>
-        </div>
+      <span class="filter-label">DPE</span>
+      <div class="rooms-btns">
+        <button class="room-btn active" data-dpe="all" onclick="toggleDpe(this)">Tous</button>
+        <button class="room-btn" data-dpe="AB" onclick="toggleDpe(this)" style="color:#1a6b3c">A-B</button>
+        <button class="room-btn" data-dpe="CD" onclick="toggleDpe(this)" style="color:#b45309">C-D</button>
+        <button class="room-btn" data-dpe="EFG" onclick="toggleDpe(this)" style="color:#991b1b">E-G</button>
       </div>
     </div>
 
@@ -602,16 +560,12 @@ const LISTINGS = [
   { id:13, title:"Appartement T4 — Côte Pavée", type:"apartment", city:"Côte Pavée", lat:43.590, lng:1.468, price:295000, charges:0, surface:92, rooms:4, bedrooms:3, furnished:false, dpe:"C", badge:"Vente", img:"#EDE5DA" },
   { id:14, title:"Maison 5 pièces — Lardenne", type:"house", city:"Lardenne", lat:43.604, lng:1.390, price:420000, charges:0, surface:130, rooms:5, bedrooms:4, furnished:false, dpe:"B", badge:"Vente", img:"#E9E0D5" },
   { id:15, title:"Studio investissement — Jean Jaurès", type:"studio", city:"Jean Jaurès", lat:43.607, lng:1.451, price:98000, charges:0, surface:24, rooms:1, bedrooms:0, furnished:true, dpe:"D", badge:"Vente", img:"#F2EAE0" },
-  { id:16, title:"Box fermé — Saint-Cyprien", type:"garage", city:"Saint-Cyprien", lat:43.599, lng:1.434, price:90, charges:0, surface:12, rooms:1, bedrooms:0, furnished:false, dpe:"C", badge:"Location", img:"#E8DDD0" },
-  { id:17, title:"Place de parking — Capitole", type:"parking", city:"Capitole", lat:43.605, lng:1.443, price:60, charges:0, surface:12, rooms:1, bedrooms:0, furnished:false, dpe:"C", badge:"Location", img:"#EDE5DA" },
-  { id:18, title:"Garage double — Lardenne", type:"garage", city:"Lardenne", lat:43.603, lng:1.387, price:25000, charges:0, surface:30, rooms:1, bedrooms:0, furnished:false, dpe:"C", badge:"Vente", img:"#E9E0D5" },
-  { id:19, title:"Parking couvert — Jean Jaurès", type:"parking", city:"Jean Jaurès", lat:43.606, lng:1.453, price:18000, charges:0, surface:12, rooms:1, bedrooms:0, furnished:false, dpe:"C", badge:"Vente", img:"#F2EAE0" },
 ];
 
 // ─── STATE
 let state = {
   type: 'all', maxPrice: 2500, minSurface: 0, minRooms: 0,
-  furnished: false, maxDpe: 5, sort: 'recent',
+  furnished: false, dpe: 'all', sort: 'recent',
   view: 'list', filtered: [...LISTINGS], transactionType: 'rent'
 };
 
@@ -619,18 +573,15 @@ let state = {
 function syncPriceSlider() {
   const isSale = state.transactionType === 'sale';
   const range = document.getElementById('priceRange');
-  const input = document.getElementById('priceInput');
   if (isSale) {
     range.min = 0; range.max = 2000000; range.step = 10000; range.value = 500000;
-    input.value = formatNumber(500000);
     state.maxPrice = 500000;
-    document.getElementById('priceUnit').textContent = '€';
+    document.getElementById('priceVal').textContent = (500000).toLocaleString('fr-FR') + ' €';
     document.getElementById('priceFill').style.cssText = 'left:0;right:75%';
   } else {
     range.min = 0; range.max = 5000; range.step = 50; range.value = 2500;
-    input.value = formatNumber(2500);
     state.maxPrice = 2500;
-    document.getElementById('priceUnit').textContent = '€/mois';
+    document.getElementById('priceVal').textContent = '2 500 €/mois';
     document.getElementById('priceFill').style.cssText = 'left:0;right:50%';
   }
 }
@@ -660,7 +611,6 @@ document.querySelectorAll('#typeDropdownMenu li').forEach(li => {
     document.getElementById('typeDropdownMenu').classList.remove('open');
     syncPriceSlider();
     syncTypeBtns();
-    syncDpeSlider();
     applyFilters();
   });
 });
@@ -714,12 +664,15 @@ function applyFilters() {
     if (state.transactionType === 'rent' && l.badge !== 'Location') return false;
     if (state.transactionType === 'sale' && l.badge !== 'Vente') return false;
     if (state.type !== 'all' && l.type !== state.type) return false;
-    if (l.price > state.maxPrice) return false;
+    if (state.transactionType === 'rent' && l.price > state.maxPrice) return false;
     if (l.surface < state.minSurface) return false;
     if (state.minRooms > 0 && l.rooms < state.minRooms) return false;
     if (state.furnished && !l.furnished) return false;
-    if (DPE_SCALE.indexOf(l.dpe) > state.maxDpe) return false;
-    if (state.transactionType === 'rent' && l.dpe === 'G') return false;
+    if (state.dpe !== 'all') {
+      if (state.dpe === 'AB' && !['A','B'].includes(l.dpe)) return false;
+      if (state.dpe === 'CD' && !['C','D'].includes(l.dpe)) return false;
+      if (state.dpe === 'EFG' && !['E','F','G'].includes(l.dpe)) return false;
+    }
     return true;
   });
 
@@ -752,46 +705,24 @@ function toggleRooms(btn) {
   applyFilters();
 }
 
-function updateDpeSlider(value) {
-  const idx = parseInt(value);
-  const letter = DPE_SCALE[idx];
-  const badge = document.getElementById('dpeVal');
-  badge.textContent = letter;
-  badge.className = `dpe-badge dpe-${letter.toLowerCase()}`;
-  const range = document.getElementById('dpeRange');
-  const pct = parseInt(range.max) > 0 ? (idx / parseInt(range.max)) * 100 : 0;
-  document.getElementById('dpeFill').style.cssText = `left:0;right:${100-pct}%`;
-  state.maxDpe = idx;
+function toggleDpe(btn) {
+  document.querySelectorAll('.room-btn[data-dpe]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.dpe = btn.dataset.dpe;
   applyFilters();
-}
-
-function syncDpeSlider() {
-  const isSale = state.transactionType === 'sale';
-  const labels = isSale ? ['A','B','C','D','E','F','G'] : ['A','B','C','D','E','F'];
-  const maxIdx = labels.length - 1;
-  const range = document.getElementById('dpeRange');
-  range.max = maxIdx;
-  range.value = maxIdx;
-  state.maxDpe = maxIdx;
-  const letter = DPE_SCALE[maxIdx];
-  const badge = document.getElementById('dpeVal');
-  badge.textContent = letter;
-  badge.className = `dpe-badge dpe-${letter.toLowerCase()}`;
-  document.getElementById('dpeFill').style.cssText = 'left:0;right:0%';
-  document.getElementById('dpeLabels').innerHTML = labels
-    .map(l => `<span class="dpe-${l.toLowerCase()}">${l}</span>`).join('');
 }
 
 function updateSlider(type, value) {
   if (type === 'price') {
     state.maxPrice = parseInt(value);
-    document.getElementById('priceInput').value = formatNumber(parseInt(value));
+    const suffix = state.transactionType === 'sale' ? ' €' : ' €/mois';
+    document.getElementById('priceVal').textContent = parseInt(value).toLocaleString('fr-FR') + suffix;
     const range = document.getElementById('priceRange');
     const pct = ((value - range.min) / (range.max - range.min)) * 100;
     document.getElementById('priceFill').style.cssText = `left:0;right:${100-pct}%`;
   } else {
     state.minSurface = parseInt(value);
-    document.getElementById('surfaceInput').value = formatNumber(parseInt(value));
+    document.getElementById('surfaceInput').value = value;
     const pct = (value / 500) * 100;
     document.getElementById('surfaceFill').style.cssText = `left:0;right:${100-pct}%`;
   }
@@ -799,8 +730,7 @@ function updateSlider(type, value) {
 }
 
 function syncSurfaceInput(value) {
-  const raw = parseInt(String(value).replace(/\s/g, '')) || 0;
-  const v = Math.min(500, Math.max(0, raw));
+  const v = Math.min(500, Math.max(0, parseInt(value) || 0));
   state.minSurface = v;
   document.getElementById('surfaceRange').value = v;
   const pct = (v / 500) * 100;
@@ -808,37 +738,21 @@ function syncSurfaceInput(value) {
   applyFilters();
 }
 
-function syncPriceInput(value) {
-  const range = document.getElementById('priceRange');
-  const raw = parseInt(value.replace(/\s/g, '')) || 0;
-  const v = Math.min(parseInt(range.max), Math.max(parseInt(range.min), raw));
-  state.maxPrice = v;
-  range.value = v;
-  const pct = ((v - parseInt(range.min)) / (parseInt(range.max) - parseInt(range.min))) * 100;
-  document.getElementById('priceFill').style.cssText = `left:0;right:${100-pct}%`;
-  applyFilters();
-}
-
 function resetFilters() {
   const isSale = state.transactionType === 'sale';
   const defaultPrice = isSale ? 500000 : 2500;
-  const dpeMax = state.transactionType === 'sale' ? 6 : 5;
-  state = { ...state, type:'all', maxPrice: defaultPrice, minSurface: 0, minRooms:0, furnished:false, maxDpe: dpeMax };
+  const priceLabel = isSale
+    ? (500000).toLocaleString('fr-FR') + ' €'
+    : '2 500 €/mois';
+  state = { ...state, type:'all', maxPrice: defaultPrice, minSurface: 0, minRooms:0, furnished:false, dpe:'all' };
   document.querySelectorAll('.type-btn').forEach((b,i) => b.classList.toggle('active', i===0));
   document.querySelectorAll('.room-btn[data-rooms]').forEach((b,i) => b.classList.toggle('active', i===0));
-  // Reset DPE slider to max
-  const dpeLetter = DPE_SCALE[dpeMax];
-  const dpeBadge = document.getElementById('dpeVal');
-  dpeBadge.textContent = dpeLetter;
-  dpeBadge.className = `dpe-badge dpe-${dpeLetter.toLowerCase()}`;
-  document.getElementById('dpeRange').value = dpeMax;
-  document.getElementById('dpeFill').style.cssText = 'left:0;right:0%';
+  document.querySelectorAll('.room-btn[data-dpe]').forEach((b,i) => b.classList.toggle('active', i===0));
   document.getElementById('furnishedToggle').classList.remove('on');
   document.getElementById('priceRange').value = defaultPrice;
-  document.getElementById('priceInput').value = formatNumber(defaultPrice);
-  document.getElementById('priceUnit').textContent = isSale ? '€' : '€/mois';
   document.getElementById('surfaceRange').value = 0;
-  document.getElementById('surfaceInput').value = '0';
+  document.getElementById('surfaceInput').value = 0;
+  document.getElementById('priceVal').textContent = priceLabel;
   document.getElementById('priceFill').style.cssText = isSale ? 'left:0;right:75%' : 'left:0;right:50%';
   document.getElementById('surfaceFill').style.cssText = 'left:0;right:100%';
   applyFilters();
@@ -872,7 +786,10 @@ function renderListings() {
       </div>`;
     return;
   }
-  grid.innerHTML = state.filtered.map(l => `
+  const favs = getFavs();
+  grid.innerHTML = state.filtered.map(l => {
+    const isFav = favs.includes(l.id);
+    return `
     <a href="annonce.html?id=${l.id}" class="card" data-id="${l.id}"
        onmouseenter="hoverCard(${l.id}, true)"
        onmouseleave="hoverCard(${l.id}, false)">
@@ -883,7 +800,7 @@ function renderListings() {
         </svg>
         <span class="card-badge">${l.badge}</span>
         <div class="card-fav" onclick="event.preventDefault(); toggleFav(${l.id}, this)">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3D2E22" stroke-width="2">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="${isFav ? '#3D2E22' : 'none'}" stroke="#3D2E22" stroke-width="2">
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
           </svg>
         </div>
@@ -906,10 +823,10 @@ function renderListings() {
           <strong>${formatPrice(l.price)}</strong>
           ${l.badge === 'Location' ? '<span>/ mois CC</span>' : ''}
         </div>
-        ${l.dpe === 'G' && l.badge === 'Vente' ? '<div style="font-size:10px;color:#8A7068;margin-top:4px">Rénovation énergétique requise</div>' : ''}
       </div>
     </a>
-  `).join('');
+  `;
+  }).join('');
 }
 
 function hoverCard(id, active) {
@@ -918,27 +835,40 @@ function hoverCard(id, active) {
   if (pin) pin.classList.toggle('active', active);
 }
 
+function getFavs() {
+  return JSON.parse(localStorage.getItem('drify_favorites') || '[]');
+}
+function setFavs(favs) {
+  localStorage.setItem('drify_favorites', JSON.stringify(favs));
+}
 function toggleFav(id, btn) {
+  const favs = getFavs();
+  const idx = favs.indexOf(id);
   const svg = btn.querySelector('svg');
-  const isFav = svg.style.fill === 'rgb(61, 46, 34)';
-  svg.style.fill = isFav ? 'none' : '#3D2E22';
+  if (idx === -1) {
+    favs.push(id);
+    svg.setAttribute('fill', '#3D2E22');
+  } else {
+    favs.splice(idx, 1);
+    svg.setAttribute('fill', 'none');
+  }
+  setFavs(favs);
 }
 
 // ─── HELPERS
-function formatNumber(n) {
-  return n.toLocaleString('fr-FR');
-}
-
 function formatPrice(p) {
   return p.toLocaleString('fr-FR') + ' €';
 }
 
-const DPE_SCALE = ['A','B','C','D','E','F','G'];
-const DPE_BG    = { A:'#1a9e3f', B:'#4cb847', C:'#c3d52a', D:'#f5e600', E:'#f0a500', F:'#e06b00', G:'#cc0000' };
-const DPE_TEXT  = { A:'#333333', B:'#333333', C:'#333333', D:'#333333', E:'#333333', F:'#333333', G:'#333333' };
+function dpeColor(dpe) {
+  const colors = { A:'#dcfce7', B:'#d1fae5', C:'#fef9c3', D:'#fef3c7', E:'#fee2e2', F:'#fecaca', G:'#fca5a5' };
+  return colors[dpe] || '#f3f4f6';
+}
 
-function dpeColor(dpe)     { return DPE_BG[dpe]   || '#f3f4f6'; }
-function dpeTextColor(dpe) { return DPE_TEXT[dpe]  || '#333333'; }
+function dpeTextColor(dpe) {
+  const colors = { A:'#166534', B:'#065f46', C:'#854d0e', D:'#92400e', E:'#991b1b', F:'#7f1d1d', G:'#7f1d1d' };
+  return colors[dpe] || '#374151';
+}
 
 // ─── INIT
 (function() {
