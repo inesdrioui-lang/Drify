@@ -175,6 +175,30 @@
       pointer-events: all; cursor: pointer;
       box-shadow: 0 1px 4px rgba(61,46,34,0.2);
     }
+    /* ─── DPE CLASSES (palette officielle FR) ─── */
+    .dpe-a { background: #1a9e3f; color: #333333; }
+    .dpe-b { background: #4cb847; color: #333333; }
+    .dpe-c { background: #c3d52a; color: #333333; }
+    .dpe-d { background: #f5e600; color: #333333; }
+    .dpe-e { background: #f0a500; color: #333333; }
+    .dpe-f { background: #e06b00; color: #333333; }
+    .dpe-g { background: #cc0000; color: #333333; }
+    /* DPE slider : badge + graduations */
+    .dpe-badge-wrap { margin-bottom: 10px; }
+    .dpe-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 28px; height: 22px; border-radius: 5px;
+      font-size: 13px; font-weight: 800;
+    }
+    .dpe-ticks {
+      display: flex; justify-content: space-between;
+      margin: 8px 4px 0;
+    }
+    .dpe-tick {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 22px; height: 18px; border-radius: 4px;
+      font-size: 11px; font-weight: 800; opacity: 0.7;
+    }
     /* Surface input manuel */
     .surface-input-wrap { display: flex; align-items: baseline; gap: 4px; }
     .surface-number-input {
@@ -510,12 +534,24 @@
     <div class="filter-divider"></div>
 
     <div class="filter-group">
-      <span class="filter-label">DPE</span>
-      <div class="rooms-btns">
-        <button class="room-btn active" data-dpe="all" onclick="toggleDpe(this)">Tous</button>
-        <button class="room-btn" data-dpe="AB" onclick="toggleDpe(this)" style="color:#1a6b3c">A-B</button>
-        <button class="room-btn" data-dpe="CD" onclick="toggleDpe(this)" style="color:#b45309">C-D</button>
-        <button class="room-btn" data-dpe="EFG" onclick="toggleDpe(this)" style="color:#991b1b">E-G</button>
+      <span class="filter-label">DPE maximum</span>
+      <div class="slider-wrap" style="padding-bottom:4px">
+        <div class="dpe-badge-wrap">
+          <span id="dpeBadge" class="dpe-badge dpe-f">F</span>
+        </div>
+        <div class="slider-track">
+          <div class="slider-fill" id="dpeFill" style="left:0;right:0%"></div>
+          <input type="range" id="dpeRange" min="0" max="5" value="5" step="1"
+            oninput="updateDpeSlider(this.value)" />
+        </div>
+        <div class="dpe-ticks" id="dpeTicks">
+          <span class="dpe-tick dpe-a">A</span>
+          <span class="dpe-tick dpe-b">B</span>
+          <span class="dpe-tick dpe-c">C</span>
+          <span class="dpe-tick dpe-d">D</span>
+          <span class="dpe-tick dpe-e">E</span>
+          <span class="dpe-tick dpe-f">F</span>
+        </div>
       </div>
     </div>
 
@@ -565,7 +601,7 @@ const LISTINGS = [
 // ─── STATE
 let state = {
   type: 'all', maxPrice: 2500, minSurface: 0, minRooms: 0,
-  furnished: false, dpe: 'all', sort: 'recent',
+  furnished: false, dpeMax: 5, sort: 'recent',
   view: 'list', filtered: [...LISTINGS], transactionType: 'rent'
 };
 
@@ -610,6 +646,7 @@ document.querySelectorAll('#typeDropdownMenu li').forEach(li => {
     this.classList.add('active');
     document.getElementById('typeDropdownMenu').classList.remove('open');
     syncPriceSlider();
+    syncDpeSlider();
     syncTypeBtns();
     applyFilters();
   });
@@ -668,11 +705,8 @@ function applyFilters() {
     if (l.surface < state.minSurface) return false;
     if (state.minRooms > 0 && l.rooms < state.minRooms) return false;
     if (state.furnished && !l.furnished) return false;
-    if (state.dpe !== 'all') {
-      if (state.dpe === 'AB' && !['A','B'].includes(l.dpe)) return false;
-      if (state.dpe === 'CD' && !['C','D'].includes(l.dpe)) return false;
-      if (state.dpe === 'EFG' && !['E','F','G'].includes(l.dpe)) return false;
-    }
+    const DPE_ORDER = ['A','B','C','D','E','F','G'];
+    if (DPE_ORDER.indexOf(l.dpe) > state.dpeMax) return false;
     return true;
   });
 
@@ -705,11 +739,40 @@ function toggleRooms(btn) {
   applyFilters();
 }
 
-function toggleDpe(btn) {
-  document.querySelectorAll('.room-btn[data-dpe]').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  state.dpe = btn.dataset.dpe;
+const DPE_LETTERS = ['A','B','C','D','E','F','G'];
+const DPE_CLASSES = ['dpe-a','dpe-b','dpe-c','dpe-d','dpe-e','dpe-f','dpe-g'];
+
+function updateDpeSlider(value) {
+  const idx = parseInt(value);
+  state.dpeMax = idx;
+  const letter = DPE_LETTERS[idx];
+  const cls = DPE_CLASSES[idx];
+  const badge = document.getElementById('dpeBadge');
+  badge.textContent = letter;
+  badge.className = 'dpe-badge ' + cls;
+  const range = document.getElementById('dpeRange');
+  const pct = ((idx - range.min) / (range.max - range.min)) * 100;
+  document.getElementById('dpeFill').style.cssText = `left:0;right:${100 - pct}%`;
   applyFilters();
+}
+
+function syncDpeSlider() {
+  const isSale = state.transactionType === 'sale';
+  const range = document.getElementById('dpeRange');
+  const maxIdx = isSale ? 6 : 5;
+  range.max = maxIdx;
+  range.value = maxIdx;
+  state.dpeMax = maxIdx;
+  const letter = DPE_LETTERS[maxIdx];
+  const cls = DPE_CLASSES[maxIdx];
+  const badge = document.getElementById('dpeBadge');
+  badge.textContent = letter;
+  badge.className = 'dpe-badge ' + cls;
+  document.getElementById('dpeFill').style.cssText = 'left:0;right:0%';
+  // rebuild ticks
+  const ticks = document.getElementById('dpeTicks');
+  ticks.innerHTML = DPE_LETTERS.slice(0, maxIdx + 1)
+    .map((l, i) => `<span class="dpe-tick ${DPE_CLASSES[i]}">${l}</span>`).join('');
 }
 
 function updateSlider(type, value) {
@@ -744,10 +807,10 @@ function resetFilters() {
   const priceLabel = isSale
     ? (500000).toLocaleString('fr-FR') + ' €'
     : '2 500 €/mois';
-  state = { ...state, type:'all', maxPrice: defaultPrice, minSurface: 0, minRooms:0, furnished:false, dpe:'all' };
+  state = { ...state, type:'all', maxPrice: defaultPrice, minSurface: 0, minRooms:0, furnished:false, dpeMax: isSale ? 6 : 5 };
   document.querySelectorAll('.type-btn').forEach((b,i) => b.classList.toggle('active', i===0));
   document.querySelectorAll('.room-btn[data-rooms]').forEach((b,i) => b.classList.toggle('active', i===0));
-  document.querySelectorAll('.room-btn[data-dpe]').forEach((b,i) => b.classList.toggle('active', i===0));
+  syncDpeSlider();
   document.getElementById('furnishedToggle').classList.remove('on');
   document.getElementById('priceRange').value = defaultPrice;
   document.getElementById('surfaceRange').value = 0;
@@ -817,7 +880,7 @@ function renderListings() {
           <span>${l.surface} m²</span>
           <span>${l.rooms} p.</span>
           ${l.furnished ? '<span>Meublé</span>' : ''}
-          <span style="margin-left:auto;padding:1px 6px;border-radius:4px;font-weight:700;background:${dpeColor(l.dpe)};color:${dpeTextColor(l.dpe)}">${l.dpe}</span>
+          <span style="margin-left:auto;padding:1px 6px;border-radius:4px;font-weight:700;" class="dpe-${l.dpe.toLowerCase()}">${l.dpe}</span>
         </div>
         <div class="card-price">
           <strong>${formatPrice(l.price)}</strong>
@@ -860,15 +923,6 @@ function formatPrice(p) {
   return p.toLocaleString('fr-FR') + ' €';
 }
 
-function dpeColor(dpe) {
-  const colors = { A:'#dcfce7', B:'#d1fae5', C:'#fef9c3', D:'#fef3c7', E:'#fee2e2', F:'#fecaca', G:'#fca5a5' };
-  return colors[dpe] || '#f3f4f6';
-}
-
-function dpeTextColor(dpe) {
-  const colors = { A:'#166534', B:'#065f46', C:'#854d0e', D:'#92400e', E:'#991b1b', F:'#7f1d1d', G:'#7f1d1d' };
-  return colors[dpe] || '#374151';
-}
 
 // ─── INIT
 (function() {
