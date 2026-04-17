@@ -88,41 +88,59 @@
 
     /* ─── HERO ─── */
     .hero {
-      padding: 64px 40px 72px;
+      padding: 72px 40px 80px;
       text-align: center;
-      max-width: 900px; margin: 0 auto;
+      max-width: 860px; margin: 0 auto;
     }
-    .hero-logo {
-      display: flex; align-items: center; justify-content: center;
-      margin-bottom: 28px;
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: var(--bg-soft);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 12px; font-weight: 600;
+      color: var(--brown-mid);
+      margin-bottom: 32px;
+      letter-spacing: 0.1px;
+    }
+    .hero-badge-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--brown-light); flex-shrink: 0;
     }
     .hero h1 {
-      font-size: 38px; font-weight: 800;
-      letter-spacing: -1.2px; line-height: 1.18;
-      color: var(--brown); margin-bottom: 18px;
-    }
-    .hero-slogan {
-      font-size: 18px; font-weight: 500;
-      color: var(--brown-mid);
-      margin-bottom: 14px;
+      font-size: 52px; font-weight: 800;
+      letter-spacing: -2px; line-height: 1.1;
+      color: var(--brown); margin-bottom: 20px;
     }
     .hero-sub {
-      font-size: 16px; color: var(--text-muted);
-      max-width: 580px; margin: 0 auto 32px;
+      font-size: 17px; color: var(--text-muted);
+      max-width: 520px; margin: 0 auto 36px;
       line-height: 1.7; font-weight: 400;
+    }
+    .hero-ctas {
+      display: flex; align-items: center; justify-content: center;
+      gap: 10px; margin-bottom: 40px; flex-wrap: wrap;
+    }
+    .hero-ctas .btn-primary {
+      padding: 11px 24px; font-size: 14px;
+      border-radius: 10px;
+    }
+    .hero-ctas .btn-ghost {
+      padding: 11px 24px; font-size: 14px;
+      border-radius: 10px;
     }
     .hero-pillars {
       display: flex; align-items: center; justify-content: center;
-      gap: 24px;
-      margin-bottom: 48px;
+      gap: 28px; margin-top: 36px; flex-wrap: wrap;
     }
     .hero-pillar {
-      font-size: 13px; font-weight: 600;
-      color: var(--brown-mid);
-      letter-spacing: 0.2px;
+      display: flex; align-items: center; gap: 7px;
+      font-size: 13px; font-weight: 500;
+      color: var(--text-muted);
     }
+    .hero-pillar svg { flex-shrink: 0; opacity: 0.7; }
     .hero-pillar-dot {
-      width: 4px; height: 4px;
+      width: 3px; height: 3px;
       border-radius: 50%;
       background: var(--border);
       flex-shrink: 0;
@@ -188,7 +206,7 @@
     }
     .search-btn:hover { opacity: 0.85; }
     .hero-owner-link {
-      font-size: 13px; color: var(--text-muted);
+      font-size: 13px; color: var(--text-muted); margin-top: 16px;
     }
     .hero-owner-link a {
       color: var(--brown-mid); font-weight: 600; text-decoration: none;
@@ -448,8 +466,7 @@
 
     /* ─── RESPONSIVE ─── */
     @media (max-width: 960px) {
-      .hero h1 { font-size: 36px; letter-spacing: -1px; }
-      .hero-slogan { font-size: 18px; }
+      .hero h1 { font-size: 42px; letter-spacing: -1.5px; }
       .grid-3 { grid-template-columns: 1fr 1fr; }
       .features-grid { grid-template-columns: 1fr 1fr; }
       .split { grid-template-columns: 1fr; }
@@ -459,14 +476,12 @@
     @media (max-width: 620px) {
       nav { padding: 0 20px; }
       .nav-links { display: none; }
-      .hero { padding: 52px 20px 48px; }
-      .hero h1 { font-size: 28px; letter-spacing: -0.8px; line-height: 1.2; }
-      .hero-slogan { font-size: 16px; }
-      .hero-sub { font-size: 14px; margin-bottom: 24px; }
-      .hero-pillars { gap: 14px; margin-bottom: 36px; }
+      .hero { padding: 52px 20px 56px; }
+      .hero h1 { font-size: 34px; letter-spacing: -1px; line-height: 1.15; }
+      .hero-sub { font-size: 15px; margin-bottom: 28px; }
+      .hero-ctas { gap: 8px; }
+      .hero-pillars { gap: 16px; margin-top: 28px; }
       .hero-pillar { font-size: 12px; }
-      .hero-logo svg { width: 30px; height: 30px; }
-      .hero-logo .logo-text { font-size: 19px; }
       .section { padding: 0 20px 64px; }
       .grid-3 { grid-template-columns: 1fr; }
       .features-grid { grid-template-columns: 1fr; }
@@ -502,18 +517,19 @@
 
 <!-- HERO -->
 <section class="hero">
-  <div class="hero-logo">
-    <img src="logo.svg" height="48" style="width:auto;" alt="Drify">
+
+  <div class="hero-badge">
+    <span class="hero-badge-dot"></span>
+    Disponible à Toulouse
   </div>
-  <h1>La solution digitale pensée pour les locataires et conçue pour les propriétaires</h1>
-  <p class="hero-slogan">Drify simplifie votre quotidien immobilier.</p>
-  <p class="hero-sub">De la recherche à la gestion, vivez une expérience 100% digitale.</p>
-  <div class="hero-pillars">
-    <span class="hero-pillar">Recherche intuitive</span>
-    <span class="hero-pillar-dot"></span>
-    <span class="hero-pillar">Bail sécurisé</span>
-    <span class="hero-pillar-dot"></span>
-    <span class="hero-pillar">Gestion simplifiée</span>
+
+  <h1>L'immobilier simplifié,<br>enfin.</h1>
+
+  <p class="hero-sub">Recherchez, louez et gérez vos biens depuis une seule plateforme. Sans paperasse, sans stress.</p>
+
+  <div class="hero-ctas">
+    <a href="recherche.html" class="btn-primary">Je cherche un bien →</a>
+    <a href="publier.html" class="btn-ghost">Je publie une annonce</a>
   </div>
 
   <div class="search-wrap">
@@ -538,7 +554,23 @@
     </button>
   </div>
 
-  <p class="hero-owner-link">Vous êtes propriétaire ? <a href="publier.html">Publiez gratuitement →</a></p>
+  <div class="hero-pillars">
+    <span class="hero-pillar">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#96766A" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+      Dossier certifié
+    </span>
+    <span class="hero-pillar-dot"></span>
+    <span class="hero-pillar">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#96766A" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Bail sécurisé
+    </span>
+    <span class="hero-pillar-dot"></span>
+    <span class="hero-pillar">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#96766A" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      Loyer en ligne
+    </span>
+  </div>
+
 </section>
 
 <!-- ANNONCES -->
