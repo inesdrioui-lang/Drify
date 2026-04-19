@@ -88,71 +88,103 @@
 
     /* ─── HERO ─── */
     .hero {
-      padding: 72px 40px 80px;
+      padding: 80px 40px 96px;
       text-align: center;
       max-width: 860px; margin: 0 auto;
+      position: relative;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 960px; height: 520px;
+      background: radial-gradient(ellipse at 50% 25%, rgba(234,221,205,0.55) 0%, transparent 65%);
+      pointer-events: none;
+      z-index: -1;
     }
     .hero-badge {
       display: inline-flex; align-items: center; gap: 7px;
-      background: var(--bg-soft);
+      background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: 20px;
-      padding: 5px 14px;
+      padding: 6px 16px;
       font-size: 12px; font-weight: 600;
       color: var(--brown-mid);
-      margin-bottom: 32px;
+      margin-bottom: 28px;
       letter-spacing: 0.1px;
+      box-shadow: 0 1px 4px rgba(61,46,34,0.06);
     }
     .hero-badge-dot {
-      width: 6px; height: 6px; border-radius: 50%;
+      width: 7px; height: 7px; border-radius: 50%;
       background: var(--brown-light); flex-shrink: 0;
+      box-shadow: 0 0 0 2px rgba(150,118,106,0.2);
     }
     .hero h1 {
-      font-size: 52px; font-weight: 800;
-      letter-spacing: -2px; line-height: 1.1;
-      color: var(--brown); margin-bottom: 20px;
+      font-size: 58px; font-weight: 800;
+      letter-spacing: -2.5px; line-height: 1.08;
+      color: var(--brown); margin-bottom: 22px;
+    }
+    .h1-mark {
+      position: relative; display: inline-block;
+    }
+    .h1-mark::after {
+      content: '';
+      position: absolute;
+      bottom: 3px; left: 0; right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--brown-light) 0%, transparent 100%);
+      border-radius: 2px;
+      opacity: 0.4;
     }
     .hero-sub {
       font-size: 17px; color: var(--text-muted);
-      max-width: 520px; margin: 0 auto 36px;
-      line-height: 1.7; font-weight: 400;
+      max-width: 500px; margin: 0 auto 40px;
+      line-height: 1.75; font-weight: 400;
     }
-    .hero-ctas {
+    .hero-owner-row {
       display: flex; align-items: center; justify-content: center;
-      gap: 10px; margin-bottom: 40px; flex-wrap: wrap;
+      gap: 10px; margin-top: 20px; flex-wrap: wrap;
+      font-size: 13px; color: var(--text-muted);
     }
-    .hero-ctas .btn-primary {
-      padding: 11px 24px; font-size: 14px;
-      border-radius: 10px;
+    .hero-owner-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      color: var(--brown-mid); font-weight: 600; font-size: 13px;
+      text-decoration: none;
+      padding: 7px 15px; border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      transition: background 0.15s, border-color 0.15s, gap 0.15s;
+      font-family: inherit;
     }
-    .hero-ctas .btn-ghost {
-      padding: 11px 24px; font-size: 14px;
-      border-radius: 10px;
+    .hero-owner-btn:hover {
+      background: var(--bg-soft);
+      border-color: var(--brown-light);
+      gap: 9px;
     }
     .hero-pillars {
       display: flex; align-items: center; justify-content: center;
-      gap: 28px; margin-top: 36px; flex-wrap: wrap;
+      gap: 8px; margin-top: 36px; flex-wrap: wrap;
     }
     .hero-pillar {
-      display: flex; align-items: center; gap: 7px;
-      font-size: 13px; font-weight: 500;
-      color: var(--text-muted);
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 12px; font-weight: 600;
+      color: var(--brown-mid);
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      padding: 7px 14px;
+      border-radius: 20px;
+      box-shadow: 0 1px 3px rgba(61,46,34,0.05);
     }
-    .hero-pillar svg { flex-shrink: 0; opacity: 0.7; }
-    .hero-pillar-dot {
-      width: 3px; height: 3px;
-      border-radius: 50%;
-      background: var(--border);
-      flex-shrink: 0;
-    }
+    .hero-pillar svg { flex-shrink: 0; }
 
     /* Search */
     .search-wrap {
-      max-width: 600px; margin: 0 auto 28px;
+      max-width: 620px; margin: 0 auto 0;
       background: var(--bg-card);
       border: 1px solid var(--border);
-      border-radius: 14px;
-      box-shadow: 0 2px 20px rgba(61,46,34,0.08), 0 1px 4px rgba(61,46,34,0.05);
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(61,46,34,0.10), 0 1px 4px rgba(61,46,34,0.06);
       display: flex; align-items: center; position: relative;
     }
     .search-tab {
@@ -161,7 +193,7 @@
       flex-shrink: 0;
     }
     .search-tab-btn {
-      padding: 0 16px; height: 52px;
+      padding: 0 18px; height: 58px;
       display: flex; align-items: center;
       font-size: 13px; font-weight: 600; color: var(--brown);
       background: transparent; border: none; cursor: pointer;
@@ -189,32 +221,22 @@
     .search-tab .type-dropdown-menu li:hover { background: var(--bg-soft); }
     .search-tab .type-dropdown-menu li.active { background: var(--brown); color: #fff; }
     .search-input {
-      flex: 1; padding: 0 20px; height: 52px;
+      flex: 1; padding: 0 20px; height: 58px;
       border: none; outline: none; background: transparent;
       font-size: 14px; color: var(--text);
       font-family: inherit;
     }
     .search-input::placeholder { color: var(--text-light); }
     .search-btn {
-      margin: 6px; padding: 0 22px; height: 40px;
+      margin: 7px; padding: 0 24px; height: 44px;
       background: var(--brown); color: #fff;
-      border: none; border-radius: 9px;
+      border: none; border-radius: 11px;
       font-size: 13px; font-weight: 600;
       cursor: pointer; display: flex; align-items: center; gap: 7px;
       transition: opacity 0.15s; white-space: nowrap;
       font-family: inherit;
     }
     .search-btn:hover { opacity: 0.85; }
-    .hero-owner-link {
-      font-size: 13px; color: var(--text-muted); margin-top: 16px;
-    }
-    .hero-owner-link a {
-      color: var(--brown-mid); font-weight: 600; text-decoration: none;
-      border-bottom: 1px solid var(--border);
-      padding-bottom: 1px;
-      transition: border-color 0.15s, color 0.15s;
-    }
-    .hero-owner-link a:hover { color: var(--brown); border-color: var(--brown); }
 
     /* ─── LISTINGS ─── */
     .section { padding: 0 40px 88px; max-width: 1200px; margin: 0 auto; }
@@ -476,12 +498,13 @@
     @media (max-width: 620px) {
       nav { padding: 0 20px; }
       .nav-links { display: none; }
-      .hero { padding: 52px 20px 56px; }
-      .hero h1 { font-size: 34px; letter-spacing: -1px; line-height: 1.15; }
-      .hero-sub { font-size: 15px; margin-bottom: 28px; }
-      .hero-ctas { gap: 8px; }
-      .hero-pillars { gap: 16px; margin-top: 28px; }
-      .hero-pillar { font-size: 12px; }
+      .hero { padding: 52px 20px 64px; }
+      .hero::before { width: 100%; }
+      .hero h1 { font-size: 36px; letter-spacing: -1.2px; line-height: 1.12; }
+      .hero-sub { font-size: 15px; margin-bottom: 32px; }
+      .hero-owner-row { flex-direction: column; gap: 8px; }
+      .hero-pillars { gap: 6px; margin-top: 28px; }
+      .hero-pillar { font-size: 11px; padding: 6px 12px; }
       .section { padding: 0 20px 64px; }
       .grid-3 { grid-template-columns: 1fr; }
       .features-grid { grid-template-columns: 1fr; }
@@ -523,14 +546,9 @@
     Disponible à Toulouse
   </div>
 
-  <h1>L'immobilier simplifié,<br>enfin.</h1>
+  <h1>L'immobilier <span class="h1-mark">simplifié</span>,<br>enfin.</h1>
 
-  <p class="hero-sub">Recherchez, louez et gérez vos biens depuis une seule plateforme. Sans paperasse, sans stress.</p>
-
-  <div class="hero-ctas">
-    <a href="recherche.html" class="btn-primary">Je cherche un bien →</a>
-    <a href="publier.html" class="btn-ghost">Je publie une annonce</a>
-  </div>
+  <p class="hero-sub">Recherchez, louez et gérez vos biens depuis une seule plateforme.<br>Sans paperasse, sans stress.</p>
 
   <div class="search-wrap">
     <div class="search-tab">
@@ -554,19 +572,25 @@
     </button>
   </div>
 
+  <div class="hero-owner-row">
+    <span>Vous êtes propriétaire ?</span>
+    <a href="publier.html" class="hero-owner-btn">
+      Publier une annonce
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+  </div>
+
   <div class="hero-pillars">
     <span class="hero-pillar">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#96766A" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#5C4433" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
       Dossier certifié
     </span>
-    <span class="hero-pillar-dot"></span>
     <span class="hero-pillar">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#96766A" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#5C4433" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
       Bail sécurisé
     </span>
-    <span class="hero-pillar-dot"></span>
     <span class="hero-pillar">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#96766A" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#5C4433" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
       Loyer en ligne
     </span>
   </div>
