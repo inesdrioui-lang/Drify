@@ -480,6 +480,8 @@
         <button class="type-btn" data-type="studio" onclick="toggleType(this)">Studio</button>
         <button class="type-btn" data-type="loft" onclick="toggleType(this)">Loft</button>
         <button class="type-btn" data-type="room" onclick="toggleType(this)">Chambre</button>
+        <button class="type-btn" data-type="parking" onclick="toggleType(this)">Parking</button>
+        <button class="type-btn" data-type="garage" onclick="toggleType(this)">Garage / Box</button>
       </div>
     </div>
 
@@ -543,6 +545,10 @@
       <div class="toggle-row">
         <span>Meublé uniquement</span>
         <button class="toggle" id="furnishedToggle" onclick="this.classList.toggle('on'); applyFilters()"></button>
+      </div>
+      <div class="toggle-row" style="margin-top:12px">
+        <span>Colocation uniquement</span>
+        <button class="toggle" id="colocationToggle" onclick="this.classList.toggle('on'); applyFilters()"></button>
       </div>
     </div>
 
@@ -608,6 +614,10 @@ const LISTINGS = [
   { id:10, title:"T3 terrasse — Compans", type:"apartment", city:"Compans-Caffarelli", lat:43.611, lng:1.437, price:890, charges:70, surface:70, rooms:3, bedrooms:2, furnished:true, dpe:"A", badge:"Location", img:"#E5DDD5" },
   { id:11, title:"Studio étudiant — Mirail", type:"studio", city:"Mirail", lat:43.579, lng:1.399, price:390, charges:30, surface:20, rooms:1, bedrooms:0, furnished:true, dpe:"C", badge:"Location", img:"#F0E8DE" },
   { id:12, title:"T3 calme — Minimes", type:"apartment", city:"Minimes", lat:43.614, lng:1.455, price:730, charges:50, surface:58, rooms:3, bedrooms:2, furnished:false, dpe:"D", badge:"Location", img:"#EAE0D5" },
+  { id:16, title:"Parking couvert — Capitole", type:"parking", city:"Capitole", lat:43.603, lng:1.443, price:80, charges:0, surface:12, rooms:0, bedrooms:0, furnished:false, dpe:"C", badge:"Location", img:"#E8E2DA" },
+  { id:17, title:"Garage fermé — Saint-Cyprien", type:"garage", city:"Saint-Cyprien", lat:43.598, lng:1.430, price:120, charges:0, surface:18, rooms:0, bedrooms:0, furnished:false, dpe:"D", badge:"Location", img:"#E5DDD5" },
+  { id:18, title:"Colocation T4 — Jean Jaurès", type:"apartment", city:"Jean Jaurès", lat:43.607, lng:1.453, price:450, charges:40, surface:88, rooms:4, bedrooms:3, furnished:true, colocation:true, dpe:"C", badge:"Location", img:"#EDE5DA" },
+  { id:19, title:"Colocation meublée — Compans", type:"apartment", city:"Compans-Caffarelli", lat:43.612, lng:1.436, price:380, charges:30, surface:72, rooms:3, bedrooms:2, furnished:true, colocation:true, dpe:"B", badge:"Location", img:"#F0E8DE" },
   { id:13, title:"Appartement T4 — Côte Pavée", type:"apartment", city:"Côte Pavée", lat:43.590, lng:1.468, price:295000, charges:0, surface:92, rooms:4, bedrooms:3, furnished:false, dpe:"C", badge:"Vente", img:"#EDE5DA" },
   { id:14, title:"Maison 5 pièces — Lardenne", type:"house", city:"Lardenne", lat:43.604, lng:1.390, price:420000, charges:0, surface:130, rooms:5, bedrooms:4, furnished:false, dpe:"B", badge:"Vente", img:"#E9E0D5" },
   { id:15, title:"Studio investissement — Jean Jaurès", type:"studio", city:"Jean Jaurès", lat:43.607, lng:1.451, price:98000, charges:0, surface:24, rooms:1, bedrooms:0, furnished:true, dpe:"D", badge:"Vente", img:"#F2EAE0" },
@@ -616,7 +626,7 @@ const LISTINGS = [
 // ─── STATE
 let state = {
   type: 'all', maxPrice: 2500, minSurface: 0, minRooms: 0,
-  furnished: false, dpeMax: 5, sort: 'recent',
+  furnished: false, colocation: false, dpeMax: 5, sort: 'recent',
   view: 'list', filtered: [...LISTINGS], transactionType: 'rent'
 };
 
@@ -713,6 +723,8 @@ function renderMapMarkers() {
 function applyFilters() {
   const sort = document.getElementById('sortSelect').value;
   state.sort = sort;
+  state.furnished = document.getElementById('furnishedToggle').classList.contains('on');
+  state.colocation = document.getElementById('colocationToggle').classList.contains('on');
 
   let result = LISTINGS.filter(l => {
     if (state.transactionType === 'rent' && l.badge !== 'Location') return false;
@@ -722,6 +734,7 @@ function applyFilters() {
     if (l.surface < state.minSurface) return false;
     if (state.minRooms > 0 && l.rooms < state.minRooms) return false;
     if (state.furnished && !l.furnished) return false;
+    if (state.colocation && !l.colocation) return false;
     const DPE_ORDER = ['A','B','C','D','E','F','G'];
     if (DPE_ORDER.indexOf(l.dpe) > state.dpeMax) return false;
     return true;
@@ -834,11 +847,12 @@ function syncPriceInput(value) {
 function resetFilters() {
   const isSale = state.transactionType === 'sale';
   const defaultPrice = isSale ? 500000 : 2500;
-  state = { ...state, type:'all', maxPrice: defaultPrice, minSurface: 0, minRooms:0, furnished:false, dpeMax: isSale ? 6 : 5 };
+  state = { ...state, type:'all', maxPrice: defaultPrice, minSurface: 0, minRooms:0, furnished:false, colocation:false, dpeMax: isSale ? 6 : 5 };
   document.querySelectorAll('.type-btn').forEach((b,i) => b.classList.toggle('active', i===0));
   document.querySelectorAll('.room-btn[data-rooms]').forEach((b,i) => b.classList.toggle('active', i===0));
   syncDpeSlider();
   document.getElementById('furnishedToggle').classList.remove('on');
+  document.getElementById('colocationToggle').classList.remove('on');
   document.getElementById('priceRange').value = defaultPrice;
   document.getElementById('surfaceRange').value = 0;
   document.getElementById('surfaceInput').value = 0;
