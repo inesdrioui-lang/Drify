@@ -38,6 +38,65 @@
       -webkit-font-smoothing: antialiased;
     }
 
+    /* ─── BLUR GATE ─── */
+    #blur-gate {
+      display: none;
+      position: fixed; inset: 0; z-index: 1000;
+    }
+    #blur-overlay {
+      position: absolute; inset: 0;
+      background: rgba(20, 10, 5, 0.55);
+    }
+    #blur-modal {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      background: #FDFCFA;
+      border-radius: 20px;
+      padding: 44px 40px 40px;
+      width: min(460px, calc(100vw - 40px));
+      text-align: center;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.18), 0 4px 16px rgba(0,0,0,0.08);
+    }
+    #blur-modal .gate-logo {
+      display: flex; align-items: center; justify-content: center;
+      gap: 9px; margin-bottom: 28px;
+    }
+    #blur-modal .gate-logo-text {
+      font-size: 20px; font-weight: 700; letter-spacing: -0.3px;
+      color: #3D2E22;
+      font-family: 'Nunito', -apple-system, sans-serif;
+    }
+    #blur-modal h2 {
+      font-size: 24px; font-weight: 800; letter-spacing: -0.8px;
+      color: #3D2E22; margin-bottom: 12px;
+    }
+    #blur-modal p {
+      font-size: 15px; color: #8A7068; line-height: 1.65;
+      margin-bottom: 32px; max-width: 340px; margin-left: auto; margin-right: auto;
+    }
+    #blur-modal .gate-btn-primary {
+      display: block; width: 100%;
+      background: #3D2E22; color: #fff;
+      border: none; border-radius: 12px;
+      padding: 15px 24px;
+      font-size: 15px; font-weight: 600;
+      cursor: pointer; text-decoration: none;
+      margin-bottom: 14px;
+      transition: opacity 0.15s;
+    }
+    #blur-modal .gate-btn-primary:hover { opacity: 0.85; }
+    #blur-modal .gate-link-secondary {
+      font-size: 14px; color: #8A7068; text-decoration: none;
+    }
+    #blur-modal .gate-link-secondary:hover { color: #3D2E22; }
+    #blur-modal .gate-link-secondary span { font-weight: 600; color: #5C4433; }
+    #page-content.blurred {
+      filter: blur(6px);
+      pointer-events: none;
+      user-select: none;
+    }
+
     /* ─── NAV ─── */
     nav {
       position: sticky; top: 0; z-index: 100;
@@ -555,6 +614,23 @@
   </style>
 </head>
 <body>
+
+<!-- BLUR GATE -->
+<div id="blur-gate">
+  <div id="blur-overlay"></div>
+  <div id="blur-modal">
+    <div class="gate-logo">
+      <img src="logo.svg" height="32" style="width:auto;" alt="Drify">
+      <span class="gate-logo-text">Drify</span>
+    </div>
+    <h2>Publiez votre annonce</h2>
+    <p>Créez un compte gratuitement pour accéder à toutes les fonctionnalités de publication.</p>
+    <a href="inscription.html" class="gate-btn-primary">S'inscrire gratuitement</a>
+    <a href="connexion.html" class="gate-link-secondary">Déjà un compte ? <span>Se connecter</span></a>
+  </div>
+</div>
+
+<div id="page-content">
 
 <!-- NAV -->
 <nav>
@@ -1263,6 +1339,18 @@ document.head.appendChild(style);
 const today = new Date();
 today.setDate(today.getDate() + 14);
 document.getElementById('property-available').value = today.toISOString().split('T')[0];
+
+// ─── BLUR GATE — AUTH CHECK ───
+// Remplacer par supabase.auth.getSession() quand Supabase sera branché
+(function() {
+  const session = localStorage.getItem('drify_session');
+  if (!session) {
+    document.getElementById('blur-gate').style.display = 'block';
+    document.getElementById('page-content').classList.add('blurred');
+  }
+})();
 </script>
+
+</div><!-- /page-content -->
 </body>
 </html>
