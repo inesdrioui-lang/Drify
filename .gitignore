@@ -1,0 +1,12 @@
+# Environment variables — never commit
+.env
+.env.local
+.env.*.local
+
+# macOS
+.DS_Store
+
+# Node
+node_modules/
+.next/
+*.tsbuildinfo
