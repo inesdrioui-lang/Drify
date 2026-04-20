@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cp \"/Users/ines/Desktop/Drify/Claude Code/logo-preview.html\" /tmp/drify_site/logo-preview.html)",
+      "Bash(cp \"/Users/ines/Desktop/Drify/Claude Code/index.html\" /tmp/drify_site/index.html)",
+      "Bash(cp \"/Users/ines/Desktop/Drify/Claude Code/recherche.html\" /tmp/drify_site/recherche.html)",
+      "Bash(cp \"/Users/ines/Desktop/Drify/Claude Code/annonce.html\" /tmp/drify_site/annonce.html)",
+      "Bash(cp \"/Users/ines/Desktop/Drify/Claude Code/publier.html\" /tmp/drify_site/publier.html)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(for f:*)",
+      "Bash(do cp:*)",
+      "Bash(done)",
+      "Bash(ls \"/Users/ines/Desktop/Drify/Claude Code/\"*.svg)",
+      "Read(//Users/ines/**)",
+      "Bash(mkdir -p \"/Users/ines/Desktop/Drify/Claude Code/.claude/skills/drify-ui-expert\")",
+      "Bash(cp \"/Users/ines/Desktop/Drify/Claude Code/skills/drify-ui-expert.skill\" \"/Users/ines/Desktop/Drify/Claude Code/.claude/skills/drify-ui-expert/SKILL.md\")",
+      "Read(//tmp/**)",
+      "Bash(mkdir -p /tmp/drify_site)",
+      "Bash(cp \"/Users/ines/Desktop/Drify/Claude Code/\"*.html /tmp/drify_site/)",
+      "Bash(cp \"/Users/ines/Desktop/Drify/Claude Code/\"*.svg /tmp/drify_site/)",
+      "Bash(cat)",
+      "Bash(python3 /tmp/drify_serve.py)",
+      "Bash(pkill -f \"drify_serve\")",
+      "Bash(kill 6778)",
+      "Bash(npm --version)",
+      "Read(//usr/local/**)",
+      "Bash(brew list *)",
+      "Bash(export PATH=\"$PATH:/opt/homebrew/bin:/usr/local/bin:/opt/homebrew/opt/node/bin\")",
+      "Bash(sw_vers)",
+      "Bash(curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh)",
+      "Bash(bash)",
+      "Bash(gh --version)",
+      "Bash(curl -s -o /dev/null -w \"HTTP Status: %{http_code}\\\\nContent-Type: %{content_type}\\\\nRedirect: %{redirect_url}\\\\n\" https://drify.vercel.app/)",
+      "Bash(curl -s https://drify.vercel.app/)",
+      "Bash(curl -s https://drify.vercel.app/_next/static/chunks/255-4f212684648fcab9.js -o /dev/null -w \"Status: %{http_code}\\\\n\")"
+    ]
+  }
+}

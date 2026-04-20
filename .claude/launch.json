@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Drify Static Site",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["/tmp/drify_serve.py"],
+      "port": 3001
+    }
+  ]
+}
