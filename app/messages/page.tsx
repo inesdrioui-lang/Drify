@@ -166,21 +166,6 @@ export default function MessagesPage() {
         @media(max-width:768px){nav{padding:0 16px}.nav-links{display:none}.messenger{grid-template-columns:1fr}}
       `}</style>
 
-      <nav>
-        <Link href="/" className="logo">
-          <Image src="/logo.svg" height={32} width={80} style={{width:'auto'}} alt="Drify" />
-        </Link>
-        <div className="nav-links">
-          <Link href="/">Accueil</Link>
-          <Link href="/recherche">Rechercher</Link>
-          <Link href="/publier">Publier</Link>
-          <Link href="/messages" className="active">Messages</Link>
-          <Link href="/favoris">Favoris</Link>
-        </div>
-        <div className="nav-end">
-          <div className="nav-avatar">PD</div>
-        </div>
-      </nav>
 
       <div className="messenger">
         {/* CONVERSATION LIST */}

@@ -285,22 +285,6 @@ function RechercheContent() {
         @media (max-width:700px) { nav { padding:0 16px; } .nav-links { display:none; } .filters-panel { display:none; } }
       `}</style>
 
-      <nav>
-        <Link href="/" className="logo">
-          <Image src="/logo.svg" height={32} width={80} style={{width:'auto'}} alt="Drify" />
-        </Link>
-        <div className="nav-links">
-          <Link href="/">Accueil</Link>
-          <Link href="/recherche" className="active">Rechercher</Link>
-          <Link href="/publier">Publier</Link>
-          <Link href="/messages">Messages</Link>
-          <Link href="/favoris">Favoris</Link>
-        </div>
-        <div className="nav-end">
-          <Link href="/connexion" className="btn-ghost">Se connecter</Link>
-          <Link href="/inscription" className="btn-primary">S&apos;inscrire</Link>
-        </div>
-      </nav>
 
       <div className="topbar">
         <div className="search-inline">

@@ -3,18 +3,21 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState } from 'react'
+import { signIn } from '@/app/auth/actions'
 
 export default function ConnexionPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [errors, setErrors] = useState<{email?: string; password?: string}>({})
+  const [serverError, setServerError] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
 
   function validateEmail(v: string) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const newErrors: {email?: string; password?: string} = {}
     if (!email) newErrors.email = "L'email est obligatoire."
@@ -22,8 +25,14 @@ export default function ConnexionPage() {
     if (!password) newErrors.password = 'Le mot de passe est obligatoire.'
     setErrors(newErrors)
     if (Object.keys(newErrors).length === 0) {
-      console.log('Login:', { email })
-      // TODO: integrate with Supabase auth
+      setIsLoading(true)
+      setServerError('')
+      const fd = new FormData()
+      fd.append('email', email)
+      fd.append('password', password)
+      const result = await signIn(fd)
+      if (result?.error) setServerError(result.error)
+      setIsLoading(false)
     }
   }
 
@@ -94,22 +103,6 @@ export default function ConnexionPage() {
         }
       `}</style>
 
-      <nav>
-        <Link href="/" className="logo">
-          <Image src="/logo.svg" height={32} width={80} style={{width:'auto'}} alt="Drify" />
-        </Link>
-        <div className="nav-links">
-          <Link href="/">Accueil</Link>
-          <Link href="/recherche">Rechercher</Link>
-          <Link href="/publier">Publier</Link>
-          <Link href="/messages">Messages</Link>
-          <Link href="/favoris">Favoris</Link>
-        </div>
-        <div className="nav-end">
-          <Link href="/connexion" className="btn-ghost">Se connecter</Link>
-          <Link href="/inscription" className="btn-primary">S&apos;inscrire</Link>
-        </div>
-      </nav>
 
       <main className="auth-page">
         <div className="auth-card">
@@ -159,7 +152,14 @@ export default function ConnexionPage() {
               <span className="field-error">{errors.password || ''}</span>
             </div>
 
-            <button type="submit" className="btn-submit">Se connecter</button>
+            <button type="submit" className="btn-submit" disabled={isLoading}>
+              {isLoading ? 'Connexion…' : 'Se connecter'}
+            </button>
+            {serverError && (
+              <p style={{color:'var(--error)',fontSize:'13px',textAlign:'center',marginTop:'10px'}}>
+                {serverError}
+              </p>
+            )}
           </form>
 
           <a href="#" className="forgot-link">Mot de passe oublié ?</a>

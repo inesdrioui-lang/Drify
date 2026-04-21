@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState } from 'react'
+import { signUp } from '@/app/auth/actions'
 
 export default function InscriptionPage() {
   const [selectedProfile, setSelectedProfile] = useState<string | null>(null)
@@ -11,6 +12,8 @@ export default function InscriptionPage() {
   const [form, setForm] = useState({ prenom: '', nom: '', email: '', password: '', confirm: '', telephone: '', ville: '' })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [profileError, setProfileError] = useState('')
+  const [serverError, setServerError] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
 
   function updateField(field: string, value: string) {
     setForm(prev => ({...prev, [field]: value}))
@@ -19,7 +22,7 @@ export default function InscriptionPage() {
 
   function validateEmail(v: string) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const newErrors: Record<string, string> = {}
     if (!selectedProfile) { setProfileError('Veuillez choisir un profil.') }
@@ -38,7 +41,18 @@ export default function InscriptionPage() {
     }
     setErrors(newErrors)
     if (Object.keys(newErrors).length === 0 && selectedProfile) {
-      console.log('Register:', { ...form, profile: selectedProfile })
+      setIsLoading(true)
+      setServerError('')
+      const fd = new FormData()
+      fd.append('email', form.email)
+      fd.append('password', form.password)
+      fd.append('role', selectedProfile)
+      fd.append('prenom', form.prenom)
+      fd.append('nom', form.nom)
+      fd.append('telephone', form.telephone)
+      const result = await signUp(fd)
+      if (result?.error) setServerError(result.error)
+      setIsLoading(false)
     }
   }
 
@@ -113,22 +127,6 @@ export default function InscriptionPage() {
         }
       `}</style>
 
-      <nav>
-        <Link href="/" className="logo">
-          <Image src="/logo.svg" height={32} width={80} style={{width:'auto'}} alt="Drify" />
-        </Link>
-        <div className="nav-links">
-          <Link href="/">Accueil</Link>
-          <Link href="/recherche">Rechercher</Link>
-          <Link href="/publier">Publier</Link>
-          <Link href="/messages">Messages</Link>
-          <Link href="/favoris">Favoris</Link>
-        </div>
-        <div className="nav-end">
-          <Link href="/connexion" className="btn-ghost">Se connecter</Link>
-          <Link href="/inscription" className="btn-primary">S&apos;inscrire</Link>
-        </div>
-      </nav>
 
       <main className="auth-page">
         <div className="auth-card">
@@ -214,7 +212,14 @@ export default function InscriptionPage() {
               </div>
             </div>
 
-            <button type="submit" className="btn-submit">Créer mon compte</button>
+            <button type="submit" className="btn-submit" disabled={isLoading}>
+              {isLoading ? 'Création du compte…' : 'Créer mon compte'}
+            </button>
+            {serverError && (
+              <p style={{color:'var(--error)',fontSize:'13px',textAlign:'center',marginTop:'10px'}}>
+                {serverError}
+              </p>
+            )}
           </form>
 
           <p className="auth-switch">Déjà un compte ? <Link href="/connexion">Se connecter</Link></p>

@@ -102,22 +102,6 @@ export default function FavorisPage() {
         @media(max-width:700px){nav{padding:0 16px}.nav-links{display:none}.page-header{padding:24px 20px 20px}.content{padding:24px 20px 48px}.listings-grid{grid-template-columns:1fr}footer{padding:36px 20px 28px}.footer-top{grid-template-columns:1fr}}
       `}</style>
 
-      <nav>
-        <Link href="/" className="logo">
-          <Image src="/logo.svg" height={32} width={80} style={{width:'auto'}} alt="Drify" />
-        </Link>
-        <div className="nav-links">
-          <Link href="/">Accueil</Link>
-          <Link href="/recherche">Rechercher</Link>
-          <Link href="/publier">Publier</Link>
-          <Link href="/messages">Messages</Link>
-          <Link href="/favoris" className="active">Favoris</Link>
-        </div>
-        <div className="nav-end">
-          <Link href="/connexion" className="btn-ghost">Se connecter</Link>
-          <Link href="/inscription" className="btn-primary">S&apos;inscrire</Link>
-        </div>
-      </nav>
 
       <div className="page-header">
         <h1>Mes favoris{favIds.length > 0 ? ` (${favIds.length})` : ''}</h1>
