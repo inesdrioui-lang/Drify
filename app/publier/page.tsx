@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState, useEffect, useRef } from 'react'
+import { createClient } from '@/lib/supabase/client'
 
 type Step = 1 | 2 | 3
 
@@ -22,8 +23,10 @@ export default function PublierPage() {
   const addressTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    const timer = setTimeout(() => setShowGate(true), 800)
-    return () => clearTimeout(timer)
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) setShowGate(true)
+    })
   }, [])
 
   function toggleFeature(f: string) {
