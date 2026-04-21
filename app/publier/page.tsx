@@ -46,7 +46,6 @@ export default function PublierPage() {
   const [aiResult, setAiResult] = useState('')
   const [garant, setGarant] = useState(false)
   const [revenusMin, setRevenusMin] = useState('')
-  const [animaux, setAnimaux] = useState(false)
   const [dureeMin, setDureeMin] = useState('')
   const [preavis, setPreavis] = useState('')
 
@@ -335,8 +334,8 @@ export default function PublierPage() {
                   </div>
                 </div>
 
-                {/* Surface + Pièces + Chambres + Étage */}
-                <div className="form-row quad">
+                {/* Surface + Pièces + Chambres */}
+                <div className="form-row triple">
                   <div className="field">
                     <label>Surface (m²) <span className="req">*</span></label>
                     <input type="number" placeholder="65" value={surface} className={err('surface') ? 'error' : ''}
@@ -351,21 +350,13 @@ export default function PublierPage() {
                     <label>Chambres</label>
                     <input type="number" placeholder="2" value={chambres} onChange={e => setChambres(e.target.value)} />
                   </div>
+                </div>
+
+                {/* Étage + Disponibilité */}
+                <div className="form-row">
                   <div className="field">
                     <label>Étage</label>
                     <input type="number" placeholder="2" min="0" value={etage} onChange={e => setEtage(e.target.value)} />
-                  </div>
-                </div>
-
-                {/* DPE + Disponibilité */}
-                <div className="form-row">
-                  <div className="field">
-                    <label>DPE</label>
-                    <select value={dpe} onChange={e => setDpe(e.target.value)}>
-                      <option value="">Sélectionner</option>
-                      {['A','B','C','D','E','F','G'].map(l => <option key={l}>{l}</option>)}
-                    </select>
-                    <span className="hint">Diagnostic de performance énergétique</span>
                   </div>
                   <div className="field">
                     <label>Disponible à partir du</label>
@@ -401,7 +392,16 @@ export default function PublierPage() {
 
               {/* 3. Chauffage */}
               <div className="form-section">
-                <div className="form-section-title" style={{marginBottom:24}}>Chauffage</div>
+                <div className="form-section-title" style={{marginBottom:24}}>Chauffage & performance</div>
+                <div className="form-row single" style={{marginBottom:20}}>
+                  <div className="field">
+                    <label>DPE — Diagnostic de performance énergétique</label>
+                    <select value={dpe} onChange={e => setDpe(e.target.value)}>
+                      <option value="">Sélectionner</option>
+                      {['A','B','C','D','E','F','G'].map(l => <option key={l}>{l}</option>)}
+                    </select>
+                  </div>
+                </div>
                 <div className="chips-group">
                   <div className="chips-group-label">Gestion</div>
                   <div className="chips-wrap">
@@ -506,13 +506,7 @@ export default function PublierPage() {
                   </div>
                 </div>
                 <div className="ai-box">
-                  <div className="ai-header">
-                    <span className="ai-badge">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/></svg>
-                      IA Drify
-                    </span>
-                    <p>Générez une description professionnelle en un clic</p>
-                  </div>
+                  <p style={{fontSize:13,color:'var(--text-muted)',marginBottom:14}}>Générez une description professionnelle en un clic grâce à l&apos;IA Drify</p>
                   <button className="ai-btn" onClick={generateAI} disabled={aiLoading}>
                     {aiLoading
                       ? <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{animation:'spin 1s linear infinite'}}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Génération en cours...</>
@@ -570,10 +564,6 @@ export default function PublierPage() {
                 <div className="toggle-row" style={{marginTop:8}}>
                   <div className="toggle-label">Garant accepté<span>Vous acceptez un garant personne physique ou Visale</span></div>
                   <button type="button" className={`toggle${garant ? ' on' : ''}`} onClick={() => setGarant(!garant)} />
-                </div>
-                <div className="toggle-row">
-                  <div className="toggle-label">Animaux acceptés<span>Les animaux de compagnie sont les bienvenus</span></div>
-                  <button type="button" className={`toggle${animaux ? ' on' : ''}`} onClick={() => setAnimaux(!animaux)} />
                 </div>
               </div>
 
@@ -702,7 +692,6 @@ export default function PublierPage() {
                     { label: 'Durée minimale', value: dureeMin },
                     { label: 'Préavis locataire', value: preavis },
                     { label: 'Garant', value: garant ? 'Accepté' : 'Non requis' },
-                    { label: 'Animaux', value: animaux ? 'Acceptés' : 'Non acceptés' },
                   ].map(({ label, value }) => value ? (
                     <div key={label} className="recap-row">
                       <span className="recap-label">{label}</span>
