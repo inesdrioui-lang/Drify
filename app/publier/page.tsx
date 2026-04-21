@@ -2,25 +2,43 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 type Step = 1 | 2 | 3
 
-const FEATURES = ['Parking', 'Cave', 'Balcon', 'Terrasse', 'Jardin', 'Piscine', 'Interphone', 'Digicode', 'Gardien', 'Ascenseur', 'Double vitrage', 'Parquet', 'Cuisine équipée', 'Lave-vaisselle', 'Lave-linge', 'Fibre optique', 'Climatisation']
+const CARACTERISTIQUES = ['Parquet', 'Carrelage', 'Double vitrage', 'Digicode', 'Interphone', 'Gardien', 'Ascenseur', 'Cave', 'Balcon', 'Terrasse', 'Jardin', 'Vue dégagée', 'Lumineux', 'Calme', 'Dernier étage', 'Plain-pied']
+const EQUIPEMENTS = ['Cuisine équipée', 'Four', 'Micro-ondes', 'Lave-vaisselle', 'Lave-linge', 'Sèche-linge', 'Réfrigérateur', 'Télévision', 'Fibre optique', 'Climatisation', 'Chauffe-eau', 'Interrupteurs domotiques']
 
 export default function PublierPage() {
   const [step, setStep] = useState<Step>(1)
-  const [selectedFeatures, setSelectedFeatures] = useState<string[]>([])
-  const [furnished, setFurnished] = useState(false)
+
+  // Étape 1
+  const [type, setType] = useState('')
+  const [meuble, setMeuble] = useState(false)
+  const [titre, setTitre] = useState('')
+  const [loyer, setLoyer] = useState('')
+  const [charges, setCharges] = useState('')
+  const [depot, setDepot] = useState('')
+  const [surface, setSurface] = useState('')
+  const [pieces, setPieces] = useState('')
+  const [chambres, setChambres] = useState('')
+  const [dpe, setDpe] = useState('')
+  const [disponibilite, setDisponibilite] = useState('')
+  const [rue, setRue] = useState('')
+  const [ville, setVille] = useState('')
+  const [codePostal, setCodePostal] = useState('')
+  const [chauffage, setChauffage] = useState({ gestion: '', energie: '', emission: '' })
+  const [caracteristiques, setCaracteristiques] = useState<string[]>([])
+  const [equipements, setEquipements] = useState<string[]>([])
   const [parking, setParking] = useState(false)
-  const [pets, setPets] = useState(false)
+
+  // Étape 2
   const [aiLoading, setAiLoading] = useState(false)
   const [aiResult, setAiResult] = useState('')
+
+  // Gate
   const [showGate, setShowGate] = useState(false)
-  const [addressSuggestions, setAddressSuggestions] = useState<{label:string;city:string}[]>([])
-  const [addressValue, setAddressValue] = useState('')
-  const addressTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     const supabase = createClient()
@@ -29,20 +47,12 @@ export default function PublierPage() {
     })
   }, [])
 
-  function toggleFeature(f: string) {
-    setSelectedFeatures(prev => prev.includes(f) ? prev.filter(x => x !== f) : [...prev, f])
+  function toggleCaracteristique(f: string) {
+    setCaracteristiques(prev => prev.includes(f) ? prev.filter(x => x !== f) : [...prev, f])
   }
 
-  function fetchAddress(q: string) {
-    if (q.length < 3) { setAddressSuggestions([]); return }
-    if (addressTimeoutRef.current) clearTimeout(addressTimeoutRef.current)
-    addressTimeoutRef.current = setTimeout(async () => {
-      try {
-        const res = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(q)}&limit=5`)
-        const data = await res.json()
-        setAddressSuggestions(data.features?.map((f: {properties:{label:string;city:string}}) => ({label:f.properties.label, city:f.properties.city})) || [])
-      } catch {}
-    }, 300)
+  function toggleEquipement(f: string) {
+    setEquipements(prev => prev.includes(f) ? prev.filter(x => x !== f) : [...prev, f])
   }
 
   function generateAI() {
@@ -59,7 +69,7 @@ export default function PublierPage() {
   return (
     <>
       <style>{`
-        :root{--bg:#FDFCFA;--bg-soft:#F7F3EE;--bg-card:#FFFFFF;--brown:#3D2E22;--brown-mid:#5C4433;--brown-light:#96766A;--border:#EAE3DA;--border-soft:#F0EBE4;--text:#1A0F08;--text-muted:#8A7068;--text-light:#B5A49C;--green:#2D7A4F;--green-bg:#E8F5E9;--red:#C53030}
+        :root{--bg:#FDFCFA;--bg-soft:#F7F3EE;--bg-card:#FFFFFF;--brown:#3D2E22;--brown-mid:#5C4433;--brown-main:#6B3F26;--brown-light:#96766A;--border:#EAE3DA;--border-soft:#F0EBE4;--beige:#EDE0CF;--beige-light:#F7F2EA;--beige-dark:#D4B896;--text:#1A0F08;--text-muted:#8A7068;--text-light:#B5A49C;--green:#2D7A4F;--green-bg:#E8F5E9;--red:#C53030}
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         html{scroll-behavior:smooth}
         body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased}
@@ -112,10 +122,6 @@ export default function PublierPage() {
         .photo-slot:hover{border-color:var(--brown-light);background:var(--bg-soft)}
         .photo-slot svg{color:var(--text-light)}
         .photo-slot span{font-size:11px;color:var(--text-light);font-weight:500}
-        .features-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
-        .feature-tag{padding:10px 14px;border:1px solid var(--border);border-radius:10px;font-size:13px;font-weight:500;color:var(--text-muted);cursor:pointer;text-align:center;transition:all .2s;background:var(--bg);user-select:none}
-        .feature-tag:hover{border-color:var(--brown-light);color:var(--brown)}
-        .feature-tag.selected{background:var(--brown);border-color:var(--brown);color:#fff}
         .ai-box{background:linear-gradient(135deg,#F7F3EE 0%,#FDFCFA 100%);border:1px solid var(--border);border-radius:14px;padding:24px;margin-top:16px}
         .ai-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
         .ai-badge{display:inline-flex;align-items:center;gap:5px;background:var(--brown);color:#fff;font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;text-transform:uppercase;letter-spacing:.5px}
@@ -125,12 +131,6 @@ export default function PublierPage() {
         .ai-btn:disabled{opacity:.5;cursor:not-allowed}
         .ai-result{margin-top:16px;padding:16px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;font-size:14px;line-height:1.7;color:var(--text)}
         .ai-actions{display:flex;gap:8px;margin-top:12px}
-        .address-wrap{position:relative}
-        .address-suggestions{position:absolute;top:100%;left:0;right:0;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;margin-top:4px;box-shadow:0 8px 24px rgba(61,46,34,.12);z-index:10;overflow:hidden}
-        .address-suggestion{padding:10px 14px;font-size:13px;color:var(--text);cursor:pointer;transition:background .1s;border-bottom:1px solid var(--border-soft)}
-        .address-suggestion:last-child{border-bottom:none}
-        .address-suggestion:hover{background:var(--bg-soft)}
-        .address-suggestion span{color:var(--text-muted);font-size:12px}
         .form-nav{display:flex;justify-content:space-between;align-items:center;margin-top:40px;padding-top:24px;border-top:1px solid var(--border-soft)}
         .btn-back{padding:10px 20px;border:1px solid var(--border);border-radius:10px;font-size:14px;font-weight:600;color:var(--brown-mid);background:transparent;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px;transition:background .15s}
         .btn-back:hover{background:var(--bg-soft)}
@@ -149,6 +149,17 @@ export default function PublierPage() {
         .gate-link{font-size:14px;color:#8A7068;text-decoration:none}
         .gate-link span{font-weight:600;color:#5C4433}
         .blurred{filter:blur(6px);pointer-events:none;user-select:none}
+        /* Chips */
+        .chips-group{margin-bottom:20px}
+        .chips-group:last-child{margin-bottom:0}
+        .chips-group-label{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);margin-bottom:10px}
+        .chips-wrap{display:flex;flex-wrap:wrap;gap:8px}
+        .chip{padding:8px 16px;border:1px solid var(--beige-dark);border-radius:8px;font-size:13px;font-weight:500;color:var(--brown);cursor:pointer;background:var(--beige-light);transition:all .15s;user-select:none;font-family:inherit}
+        .chip:hover{border-color:var(--brown-main);color:var(--brown-main)}
+        .chip.selected{background:var(--brown-main);border-color:var(--brown-main);color:#fff}
+        .chip:active{transform:scale(0.97)}
+        /* Meublé chips inline */
+        .meuble-chips{display:flex;gap:8px;margin-top:4px}
         @media(max-width:768px){nav{padding:0 16px}.nav-links{display:none}.page-container{padding:32px 16px 80px}.page-title{font-size:26px}.form-section{padding:20px}.form-row{grid-template-columns:1fr}.form-row.triple{grid-template-columns:1fr 1fr}}
       `}</style>
 
@@ -193,78 +204,175 @@ export default function PublierPage() {
             })}
           </div>
 
-          {/* STEP 1 */}
+          {/* ─── STEP 1 ─── */}
           {step === 1 && (
             <>
+              {/* 1. Informations principales */}
               <div className="form-section">
                 <div className="form-section-title">Informations principales</div>
                 <div className="form-row">
                   <div className="field">
                     <label>Type de bien</label>
-                    <select><option value="">Sélectionner</option><option>Appartement</option><option>Maison</option><option>Studio</option><option>Chambre</option><option>Parking</option><option>Local commercial</option></select>
+                    <select value={type} onChange={e => setType(e.target.value)}>
+                      <option value="">Sélectionner</option>
+                      <option>Appartement</option>
+                      <option>Maison</option>
+                      <option>Studio</option>
+                      <option>Chambre</option>
+                      <option>Parking</option>
+                      <option>Local commercial</option>
+                    </select>
                   </div>
                   <div className="field">
+                    <label>Meublé</label>
+                    <div className="meuble-chips">
+                      <button
+                        className={`chip${!meuble ? ' selected' : ''}`}
+                        onClick={() => setMeuble(false)}
+                        type="button"
+                      >Non meublé</button>
+                      <button
+                        className={`chip${meuble ? ' selected' : ''}`}
+                        onClick={() => setMeuble(true)}
+                        type="button"
+                      >Meublé</button>
+                    </div>
+                  </div>
+                </div>
+                <div className="form-row single">
+                  <div className="field">
                     <label>Titre de l&apos;annonce</label>
-                    <input type="text" placeholder="Ex : T3 lumineux — Capitole" />
+                    <input type="text" placeholder="Ex : T3 lumineux — Capitole"
+                      value={titre} onChange={e => setTitre(e.target.value)} />
                   </div>
                 </div>
                 <div className="form-row triple">
-                  <div className="field"><label>Loyer (€/mois)</label><input type="number" placeholder="850" /></div>
-                  <div className="field"><label>Charges (€/mois)</label><input type="number" placeholder="60" /></div>
-                  <div className="field"><label>Dépôt de garantie</label><input type="number" placeholder="1700" /></div>
+                  <div className="field"><label>Loyer (€/mois)</label><input type="number" placeholder="850" value={loyer} onChange={e => setLoyer(e.target.value)} /></div>
+                  <div className="field"><label>Charges (€/mois)</label><input type="number" placeholder="60" value={charges} onChange={e => setCharges(e.target.value)} /></div>
+                  <div className="field"><label>Dépôt de garantie</label><input type="number" placeholder="1700" value={depot} onChange={e => setDepot(e.target.value)} /></div>
                 </div>
                 <div className="form-row triple">
-                  <div className="field"><label>Surface (m²)</label><input type="number" placeholder="65" /></div>
-                  <div className="field"><label>Nombre de pièces</label><input type="number" placeholder="3" /></div>
-                  <div className="field"><label>Chambres</label><input type="number" placeholder="2" /></div>
+                  <div className="field"><label>Surface (m²)</label><input type="number" placeholder="65" value={surface} onChange={e => setSurface(e.target.value)} /></div>
+                  <div className="field"><label>Nombre de pièces</label><input type="number" placeholder="3" value={pieces} onChange={e => setPieces(e.target.value)} /></div>
+                  <div className="field"><label>Chambres</label><input type="number" placeholder="2" value={chambres} onChange={e => setChambres(e.target.value)} /></div>
                 </div>
                 <div className="form-row">
                   <div className="field">
                     <label>DPE</label>
-                    <select><option>Sélectionner</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option></select>
+                    <select value={dpe} onChange={e => setDpe(e.target.value)}>
+                      <option value="">Sélectionner</option>
+                      <option>A</option><option>B</option><option>C</option>
+                      <option>D</option><option>E</option><option>F</option><option>G</option>
+                    </select>
                   </div>
                   <div className="field">
                     <label>Disponibilité</label>
-                    <input type="date" />
+                    <input type="date" value={disponibilite} onChange={e => setDisponibilite(e.target.value)} />
                   </div>
                 </div>
               </div>
 
+              {/* 2. Adresse */}
               <div className="form-section">
                 <div className="form-section-title">Adresse</div>
                 <div className="form-row single">
                   <div className="field">
-                    <label>Adresse complète</label>
-                    <div className="address-wrap">
-                      <input type="text" placeholder="12 rue du Taur, Toulouse" value={addressValue}
-                        onChange={e => { setAddressValue(e.target.value); fetchAddress(e.target.value) }} />
-                      {addressSuggestions.length > 0 && (
-                        <div className="address-suggestions">
-                          {addressSuggestions.map((s, i) => (
-                            <div key={i} className="address-suggestion" onClick={() => { setAddressValue(s.label); setAddressSuggestions([]) }}>
-                              {s.label} <span>{s.city}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                    <label>Rue</label>
+                    <input type="text" placeholder="Ex : rue du Taur"
+                      value={rue} onChange={e => setRue(e.target.value)} />
+                    <span className="hint">Sans numéro — votre adresse exacte reste privée</span>
+                  </div>
+                </div>
+                <div className="form-row">
+                  <div className="field">
+                    <label>Ville</label>
+                    <input type="text" placeholder="Ex : Toulouse"
+                      value={ville} onChange={e => setVille(e.target.value)} />
+                  </div>
+                  <div className="field">
+                    <label>Code postal</label>
+                    <input type="text" placeholder="Ex : 31000" maxLength={5}
+                      value={codePostal}
+                      onChange={e => { if (/^\d{0,5}$/.test(e.target.value)) setCodePostal(e.target.value) }} />
                   </div>
                 </div>
               </div>
 
+              {/* 3. Chauffage */}
+              <div className="form-section">
+                <div className="form-section-title">Chauffage</div>
+                <div className="chips-group">
+                  <div className="chips-group-label">Gestion</div>
+                  <div className="chips-wrap">
+                    {['Individuel', 'Collectif'].map(v => (
+                      <button key={v} type="button"
+                        className={`chip${chauffage.gestion === v.toLowerCase() ? ' selected' : ''}`}
+                        onClick={() => setChauffage(c => ({ ...c, gestion: c.gestion === v.toLowerCase() ? '' : v.toLowerCase() }))}>
+                        {v}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="chips-group">
+                  <div className="chips-group-label">Énergie</div>
+                  <div className="chips-wrap">
+                    {['Gaz', 'Électrique', 'Fioul', 'Pompe à chaleur', 'Poêle à bois', 'Géothermie'].map(v => (
+                      <button key={v} type="button"
+                        className={`chip${chauffage.energie === v.toLowerCase() ? ' selected' : ''}`}
+                        onClick={() => setChauffage(c => ({ ...c, energie: c.energie === v.toLowerCase() ? '' : v.toLowerCase() }))}>
+                        {v}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="chips-group">
+                  <div className="chips-group-label">Émission</div>
+                  <div className="chips-wrap">
+                    {['Radiateurs', 'Plancher chauffant', 'Climatisation réversible', 'Convecteurs', 'Poêle'].map(v => (
+                      <button key={v} type="button"
+                        className={`chip${chauffage.emission === v.toLowerCase() ? ' selected' : ''}`}
+                        onClick={() => setChauffage(c => ({ ...c, emission: c.emission === v.toLowerCase() ? '' : v.toLowerCase() }))}>
+                        {v}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* 4. Caractéristiques */}
+              <div className="form-section">
+                <div className="form-section-title">Caractéristiques du logement</div>
+                <div className="chips-wrap">
+                  {CARACTERISTIQUES.map(f => (
+                    <button key={f} type="button"
+                      className={`chip${caracteristiques.includes(f) ? ' selected' : ''}`}
+                      onClick={() => toggleCaracteristique(f)}>
+                      {f}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 5. Équipements */}
+              <div className="form-section">
+                <div className="form-section-title">Équipements inclus</div>
+                <div className="chips-wrap">
+                  {EQUIPEMENTS.map(f => (
+                    <button key={f} type="button"
+                      className={`chip${equipements.includes(f) ? ' selected' : ''}`}
+                      onClick={() => toggleEquipement(f)}>
+                      {f}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 6. Options */}
               <div className="form-section">
                 <div className="form-section-title">Options</div>
                 <div className="toggle-row">
-                  <div className="toggle-label">Meublé<span>L&apos;appartement est loué avec mobilier</span></div>
-                  <button className={`toggle${furnished ? ' on' : ''}`} onClick={() => setFurnished(!furnished)} />
-                </div>
-                <div className="toggle-row">
                   <div className="toggle-label">Parking inclus<span>Place de parking incluse dans le loyer</span></div>
                   <button className={`toggle${parking ? ' on' : ''}`} onClick={() => setParking(!parking)} />
-                </div>
-                <div className="toggle-row">
-                  <div className="toggle-label">Animaux acceptés<span>Les animaux de compagnie sont les bienvenus</span></div>
-                  <button className={`toggle${pets ? ' on' : ''}`} onClick={() => setPets(!pets)} />
                 </div>
               </div>
 
@@ -278,7 +386,7 @@ export default function PublierPage() {
             </>
           )}
 
-          {/* STEP 2 */}
+          {/* ─── STEP 2 ─── */}
           {step === 2 && (
             <>
               <div className="form-section">
@@ -327,15 +435,6 @@ export default function PublierPage() {
                 </div>
               </div>
 
-              <div className="form-section">
-                <div className="form-section-title">Équipements & services</div>
-                <div className="features-grid">
-                  {FEATURES.map(f => (
-                    <button key={f} className={`feature-tag${selectedFeatures.includes(f) ? ' selected' : ''}`} onClick={() => toggleFeature(f)}>{f}</button>
-                  ))}
-                </div>
-              </div>
-
               <div className="form-nav">
                 <button className="btn-back" onClick={() => setStep(1)}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
@@ -349,23 +448,26 @@ export default function PublierPage() {
             </>
           )}
 
-          {/* STEP 3 */}
+          {/* ─── STEP 3 ─── */}
           {step === 3 && (
             <>
               <div className="form-section">
                 <div className="form-section-title">Récapitulatif de votre annonce</div>
                 <div style={{display:'flex',flexDirection:'column',gap:12}}>
                   {[
-                    {label:'Type', value:'Appartement T3'},
-                    {label:'Adresse', value:addressValue || '—'},
-                    {label:'Loyer', value:'850 € / mois CC'},
-                    {label:'Surface', value:'65 m²'},
-                    {label:'Meublé', value:furnished ? 'Oui' : 'Non'},
-                    {label:'Équipements sélectionnés', value:selectedFeatures.length > 0 ? selectedFeatures.join(', ') : '—'},
+                    {label:'Type', value:type || '—'},
+                    {label:'Meublé', value:meuble ? 'Oui' : 'Non'},
+                    {label:'Titre', value:titre || '—'},
+                    {label:'Adresse', value:[rue, ville, codePostal].filter(Boolean).join(', ') || '—'},
+                    {label:'Loyer', value:loyer ? `${loyer} € / mois CC` : '—'},
+                    {label:'Surface', value:surface ? `${surface} m²` : '—'},
+                    {label:'Parking', value:parking ? 'Oui' : 'Non'},
+                    {label:'Caractéristiques', value:caracteristiques.length > 0 ? caracteristiques.join(', ') : '—'},
+                    {label:'Équipements', value:equipements.length > 0 ? equipements.join(', ') : '—'},
                   ].map((row, i) => (
                     <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'8px 0',borderBottom:'1px solid var(--border-soft)',fontSize:14}}>
                       <span style={{color:'var(--text-muted)'}}>{row.label}</span>
-                      <span style={{fontWeight:600,color:'var(--text)'}}>{row.value}</span>
+                      <span style={{fontWeight:600,color:'var(--text)',textAlign:'right',maxWidth:'60%'}}>{row.value}</span>
                     </div>
                   ))}
                 </div>
