@@ -15,19 +15,24 @@ export async function signUp(formData: FormData) {
   const { data, error } = await supabase.auth.signUp({ email, password })
 
   if (error) return { error: error.message }
+  if (!data.user) return { error: 'Une erreur est survenue. Veuillez réessayer.' }
 
-  if (data.user) {
-    await supabase.from('profiles').insert({
-      id: data.user.id,
-      email,
-      role,
-      prenom: prenom || null,
-      nom: nom || null,
-      telephone: telephone || null,
-    })
+  await supabase.from('profiles').insert({
+    id: data.user.id,
+    email,
+    role,
+    prenom: prenom || null,
+    nom: nom || null,
+    telephone: telephone || null,
+  })
+
+  // Session active immédiatement (confirmation email désactivée dans Supabase)
+  if (data.session) {
+    redirect(role === 'proprietaire' ? '/dashboard' : '/profil')
   }
 
-  redirect(role === 'proprietaire' ? '/dashboard' : '/recherche')
+  // Confirmation email requise → le client affiche le modal
+  return { success: true, role }
 }
 
 export async function signIn(formData: FormData) {
