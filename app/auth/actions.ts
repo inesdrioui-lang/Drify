@@ -26,13 +26,7 @@ export async function signUp(formData: FormData) {
     telephone: telephone || null,
   })
 
-  // Session active immédiatement (confirmation email désactivée dans Supabase)
-  if (data.session) {
-    redirect(role === 'proprietaire' ? '/dashboard' : '/profil')
-  }
-
-  // Confirmation email requise → le client affiche le modal
-  return { success: true, role }
+  redirect(role === 'proprietaire' ? '/dashboard' : '/profil')
 }
 
 export async function signIn(formData: FormData) {

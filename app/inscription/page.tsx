@@ -14,7 +14,6 @@ export default function InscriptionPage() {
   const [profileError, setProfileError] = useState('')
   const [serverError, setServerError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [emailSent, setEmailSent] = useState(false)
 
   function updateField(field: string, value: string) {
     setForm(prev => ({...prev, [field]: value}))
@@ -52,13 +51,8 @@ export default function InscriptionPage() {
       fd.append('nom', form.nom)
       fd.append('telephone', form.telephone)
       const result = await signUp(fd)
-      if (result?.error) {
-        setServerError(result.error)
-        setIsLoading(false)
-      } else if (result?.success) {
-        setEmailSent(true)
-        setIsLoading(false)
-      }
+      if (result?.error) setServerError(result.error)
+      setIsLoading(false)
     }
   }
 
@@ -123,55 +117,6 @@ export default function InscriptionPage() {
         .footer-links { display: flex; gap: 18px; }
 
         @media (max-width: 960px) { .footer-top { grid-template-columns: 1fr 1fr; } }
-        /* Modal confirmation email */
-        .email-overlay {
-          position: fixed; inset: 0; z-index: 200;
-          background: rgba(15,10,5,0.45);
-          backdrop-filter: blur(4px);
-          display: flex; align-items: center; justify-content: center;
-          padding: 20px;
-          animation: overlayIn 0.2s ease-out;
-        }
-        @keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
-        .email-modal {
-          background: var(--bg-card); border: 1px solid var(--border);
-          border-radius: 20px; padding: 40px 36px;
-          max-width: 420px; width: 100%; text-align: center;
-          box-shadow: 0 20px 60px rgba(61,46,34,0.18);
-          animation: modalIn 0.25s ease-out;
-        }
-        @keyframes modalIn {
-          from { opacity: 0; transform: scale(0.95) translateY(8px); }
-          to   { opacity: 1; transform: scale(1) translateY(0); }
-        }
-        .email-modal-icon {
-          width: 64px; height: 64px; border-radius: 18px;
-          background: #F5EDE7; border: 1px solid var(--border);
-          display: flex; align-items: center; justify-content: center;
-          margin: 0 auto 20px; color: var(--brown);
-        }
-        .email-modal h2 {
-          font-size: 20px; font-weight: 800;
-          color: var(--brown); letter-spacing: -0.4px; margin-bottom: 10px;
-        }
-        .email-modal p {
-          font-size: 14px; color: var(--text-muted);
-          line-height: 1.6; margin-bottom: 8px;
-        }
-        .email-modal p strong { color: var(--text); font-weight: 600; }
-        .email-modal .hint {
-          font-size: 12px; color: var(--text-light);
-          margin-top: 16px; margin-bottom: 24px;
-        }
-        .btn-modal-primary {
-          display: inline-flex; align-items: center; justify-content: center;
-          width: 100%; padding: 12px 20px; border-radius: 10px;
-          font-size: 14px; font-weight: 600; color: #fff;
-          background: var(--brown); text-decoration: none;
-          transition: opacity 0.15s; font-family: inherit;
-        }
-        .btn-modal-primary:hover { opacity: 0.85; }
-
         @media (max-width: 620px) {
           nav { padding: 0 20px; }
           .nav-links { display: none; }
@@ -179,33 +124,9 @@ export default function InscriptionPage() {
           .field-row { grid-template-columns: 1fr; }
           footer { padding: 36px 20px 28px; }
           .footer-top { grid-template-columns: 1fr; }
-          .email-modal { padding: 32px 24px; }
         }
       `}</style>
 
-
-      {emailSent && (
-        <div className="email-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-          <div className="email-modal">
-            <div className="email-modal-icon">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                <polyline points="22,6 12,13 2,6"/>
-              </svg>
-            </div>
-            <h2 id="modal-title">Vérifiez votre email</h2>
-            <p>Un lien de confirmation a été envoyé à</p>
-            <p><strong>{form.email}</strong></p>
-            <p className="hint">
-              Cliquez sur le lien dans l&apos;email pour activer votre compte.<br/>
-              Vérifiez aussi vos spams si vous ne le voyez pas.
-            </p>
-            <Link href="/connexion" className="btn-modal-primary">
-              Aller à la page de connexion
-            </Link>
-          </div>
-        </div>
-      )}
 
       <main className="auth-page">
         <div className="auth-card">
