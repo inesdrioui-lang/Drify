@@ -88,7 +88,6 @@ export default async function LocataireProfilPage({
         .lp-identity { display: flex; align-items: center; gap: 20px; margin-bottom: 20px; }
         .lp-name { font-size: 22px; font-weight: 800; color: var(--brown); letter-spacing: -0.4px; margin-bottom: 2px; }
         .lp-role { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-        .lp-email { font-size: 13px; color: var(--text-light); margin-top: 2px; }
 
         /* Score */
         .score-row { display: flex; align-items: center; gap: 16px; padding: 16px 0; border-top: 1px solid var(--border-soft); }
@@ -155,7 +154,6 @@ export default async function LocataireProfilPage({
                 {profile?.prenom && profile?.nom ? `${profile.prenom} ${profile.nom}` : 'Mon profil'}
               </div>
               <div className="lp-role">Locataire</div>
-              <div className="lp-email">{user.email}</div>
             </div>
             <div style={{ marginLeft: 'auto' }}>
               <span className="completion-chip">

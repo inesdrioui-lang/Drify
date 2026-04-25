@@ -67,8 +67,7 @@ export default async function ProfilPage({
         }
         .profil-avatar:hover .profil-avatar-hint { opacity: 1; }
         .profil-name { font-size: 22px; font-weight: 800; color: var(--brown); letter-spacing: -0.4px; margin-bottom: 2px; }
-        .profil-role { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
-        .profil-email { font-size: 13px; color: var(--text-light); }
+        .profil-role { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
 
         /* Completion */
         .completion-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 0; border-top: 1px solid var(--border-soft); }
@@ -142,7 +141,6 @@ export default async function ProfilPage({
                   : 'Mon profil'}
               </div>
               <div className="profil-role">Propriétaire</div>
-              <div className="profil-email">{user.email}</div>
             </div>
           </div>
 
