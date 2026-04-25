@@ -38,6 +38,12 @@ export async function signIn(formData: FormData) {
 
   if (error) return { error: 'Email ou mot de passe incorrect.' }
 
+  // Lire le rôle pour rediriger vers la bonne page
+  const { data: { user: authUser } } = await supabase.auth.getUser()
+  if (authUser) {
+    const { data: prof } = await supabase.from('profiles').select('role').eq('id', authUser.id).single()
+    if (prof?.role === 'locataire') redirect('/locataire/profil')
+  }
   redirect('/dashboard')
 }
 

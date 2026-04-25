@@ -17,6 +17,9 @@ export default async function Header() {
     profile = data
   }
 
+  const isProprietaire = profile?.role === 'proprietaire'
+  const isLocataire = profile?.role === 'locataire'
+
   return (
     <>
       <style>{`
@@ -51,9 +54,10 @@ export default async function Header() {
         <div className="nav-links">
           <Link href="/">Accueil</Link>
           <Link href="/recherche">Rechercher</Link>
-          <Link href="/publier">Publier</Link>
+          {isProprietaire && <Link href="/publier">Publier</Link>}
           <Link href="/messages">Messages</Link>
           <Link href="/favoris">Favoris</Link>
+          <Link href="/pro" style={{ color: 'var(--brown-mid)', fontWeight: 600 }}>Drify Pro</Link>
         </div>
         <div className="nav-end">
           {!user ? (
@@ -63,10 +67,15 @@ export default async function Header() {
             </>
           ) : (
             <>
-              {profile?.role === 'proprietaire' && (
+              {isProprietaire && (
                 <Link href="/dashboard" className="btn-ghost">Mon dashboard</Link>
               )}
-              <Link href="/profil" className="btn-ghost">Mon profil</Link>
+              {isLocataire && (
+                <Link href="/locataire/dossier" className="btn-ghost">Mon dossier</Link>
+              )}
+              <Link href={isLocataire ? '/locataire/profil' : '/profil'} className="btn-ghost">
+                Mon profil
+              </Link>
               <form action={signOut} style={{display:'inline'}}>
                 <button type="submit" className="btn-signout">Se déconnecter</button>
               </form>
