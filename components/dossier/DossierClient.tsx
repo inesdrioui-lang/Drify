@@ -776,6 +776,7 @@ export default function DossierClient({ userId, initialProfile, initialGarants, 
               loyerCible={loyerCible}
               revenusGarants={revenusGarants}
               isEtudiant={isEtudiant}
+              suppressGarantDecision={!!guarantorResult}
             />
 
             {guarantorResult && <GuarantorBanner result={guarantorResult} />}

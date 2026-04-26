@@ -7,6 +7,7 @@ interface SolvabilityScoreProps {
   loyerCible: number
   revenusGarants: number[]
   isEtudiant: boolean
+  suppressGarantDecision?: boolean
 }
 
 export default function SolvabilityScore({
@@ -14,6 +15,7 @@ export default function SolvabilityScore({
   loyerCible,
   revenusGarants,
   isEtudiant,
+  suppressGarantDecision = false,
 }: SolvabilityScoreProps) {
   const result = calculateSolvabilityScore(revenuLocataire, loyerCible, 3, revenusGarants)
 
@@ -86,12 +88,14 @@ export default function SolvabilityScore({
         </div>
       )}
 
-      {/* Message */}
-      <div className="solv-message" style={{ color: statusColor, background: statusBg }}>
-        {isEtudiant && result.status === 'ok' && revenusGarants.length === 0
-          ? 'En tant qu\'étudiant, un garant est obligatoire pour valider votre dossier.'
-          : result.messageUtilisateur}
-      </div>
+      {/* Message — masqué si GuarantorBanner prend en charge la décision */}
+      {!suppressGarantDecision && (
+        <div className="solv-message" style={{ color: statusColor, background: statusBg }}>
+          {isEtudiant && result.status === 'ok' && revenusGarants.length === 0
+            ? 'En tant qu\'étudiant, un garant est obligatoire pour valider votre dossier.'
+            : result.messageUtilisateur}
+        </div>
+      )}
     </div>
   )
 }
