@@ -59,6 +59,7 @@ function parseMMAAAA(s: string): Date | null {
 function getDocTypes(situationPro: string): { type: string; label: string; description: string; required: boolean }[] {
   const base = [
     { type: 'identite', label: "Pièce d'identité", description: 'CNI ou passeport en cours de validité', required: true },
+    { type: 'justificatif_domicile', label: 'Justificatif de domicile', description: 'Taxe foncière ou 3 dernières quittances de loyer', required: true },
   ]
 
   if (situationPro === 'etudiant') {
