@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { saveTenantProfile } from '@/app/locataire/dossier/actions'
 import type { TenantProfileData, GarantData } from '@/app/locataire/dossier/actions'
 import type { DocEntry } from '@/components/dossier/DocumentUpload'
@@ -8,6 +8,8 @@ import DocumentUpload from '@/components/dossier/DocumentUpload'
 import GarantForm from '@/components/dossier/GarantForm'
 import SolvabilityScore from '@/components/dossier/SolvabilityScore'
 import DossierSummary from '@/components/dossier/DossierSummary'
+import GuarantorBanner from '@/components/dossier/GuarantorBanner'
+import { evaluateGuarantor } from '@/lib/guarantor'
 
 type GarantWithId = GarantData & { id: string }
 
@@ -16,6 +18,7 @@ interface DossierClientProps {
   initialProfile: TenantProfileData | null
   initialGarants: GarantWithId[]
   initialDocuments: DocEntry[]
+  multiplicateurSeuil?: number
 }
 
 const SECTIONS = [
@@ -163,7 +166,7 @@ function calcDossierScore(
   return { score: Math.min(score, 100), missing }
 }
 
-export default function DossierClient({ userId, initialProfile, initialGarants, initialDocuments }: DossierClientProps) {
+export default function DossierClient({ userId, initialProfile, initialGarants, initialDocuments, multiplicateurSeuil = 3 }: DossierClientProps) {
   const [activeSection, setActiveSection] = useState('identite')
   const [profile, setProfile] = useState<TenantProfileData>(initialProfile ?? {})
   const [garants, setGarants] = useState<GarantWithId[]>(initialGarants)
@@ -190,6 +193,52 @@ export default function DossierClient({ userId, initialProfile, initialGarants, 
 
   const { score, missing } = calcDossierScore(profile, documents, garants, situationPro)
   const isComplete = missing.length === 0
+
+  const seuilRecommande = loyerCible > 0 ? loyerCible * multiplicateurSeuil : null
+
+  const guarantorResult = useMemo(() => {
+    if (!['salarie_cdi', 'salarie_cdd', 'independant'].includes(situationPro)) return null
+    if (!revenuLocataire || !loyerCible) return null
+
+    const statut = situationPro === 'salarie_cdi' ? 'cdi'
+      : situationPro === 'salarie_cdd' ? 'cdd'
+      : 'freelance' as const
+
+    if (statut === 'cdi') {
+      if (!periodeEssai) return null
+      return evaluateGuarantor({
+        statut,
+        periodeEssai: periodeEssai === 'oui',
+        revenuMensuelNet: revenuLocataire,
+        loyerMensuel: loyerCible,
+        multiplicateurSeuil,
+      })
+    }
+
+    if (statut === 'cdd') {
+      const dateFin = parseMMAAAA(cddFin)
+      if (!dateFin) return null
+      return evaluateGuarantor({
+        statut,
+        dateFin,
+        revenuMensuelNet: revenuLocataire,
+        loyerMensuel: loyerCible,
+        multiplicateurSeuil,
+      })
+    }
+
+    // freelance
+    if (!activiteDepuis) return null
+    const year = parseInt(activiteDepuis)
+    if (isNaN(year)) return null
+    return evaluateGuarantor({
+      statut,
+      dateDebutActivite: new Date(year, 0, 1),
+      revenuMensuelNet: revenuLocataire,
+      loyerMensuel: loyerCible,
+      multiplicateurSeuil,
+    })
+  }, [situationPro, periodeEssai, cddFin, activiteDepuis, revenuLocataire, loyerCible, multiplicateurSeuil])
 
   const garant1 = garants.find(g => g.ordre === 1)
   const garant2 = garants.find(g => g.ordre === 2)
@@ -379,6 +428,14 @@ export default function DossierClient({ userId, initialProfile, initialGarants, 
         .btn-share:hover { opacity: 0.85; }
         .btn-share--disabled { background: var(--bg-soft); color: var(--text-light); border: 1px solid var(--border); cursor: not-allowed; }
         .btn-share--disabled:hover { opacity: 1; }
+
+        /* ── Guarantor banner ── */
+        .gban { border-radius: 10px; padding: 11px 14px; font-size: 13px; margin-top: 16px; }
+        .gban--ok { background: #EAF3EE; border: 1px solid #B8D9C5; color: #2D6A47; }
+        .gban--ko { background: #FEF9EC; border: 1px solid #F5D98B; color: #7A5A1A; }
+        .gban-title { display: flex; align-items: center; gap: 7px; font-weight: 700; }
+        .gban-reasons { margin: 6px 0 0 0; padding-left: 20px; display: flex; flex-direction: column; gap: 3px; font-weight: 500; }
+        .field-seuil-hint { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
 
         /* ── Conditional sub-fields ── */
         .subfields-outer { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.26s ease; }
@@ -695,6 +752,11 @@ export default function DossierClient({ userId, initialProfile, initialGarants, 
                   onChange={e => updateProfile('revenus_mensuels', parseFloat(e.target.value) || null)}
                   placeholder="2 200"
                 />
+                {seuilRecommande !== null && (
+                  <p className="field-seuil-hint">
+                    Seuil recommandé : {seuilRecommande.toLocaleString('fr-FR')} €/mois ({multiplicateurSeuil}× le loyer)
+                  </p>
+                )}
               </div>
               <div>
                 <label className="field-label">Loyer cible (€/mois)</label>
@@ -715,6 +777,8 @@ export default function DossierClient({ userId, initialProfile, initialGarants, 
               revenusGarants={revenusGarants}
               isEtudiant={isEtudiant}
             />
+
+            {guarantorResult && <GuarantorBanner result={guarantorResult} />}
           </Section>
 
           {/* ── Section 3 : Garants ── */}
