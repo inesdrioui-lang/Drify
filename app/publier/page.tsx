@@ -207,6 +207,7 @@ export default function PublierPage() {
         .validation-error{background:var(--red-bg);border:1px solid #FCA5A5;border-radius:10px;padding:12px 16px;font-size:13px;color:var(--red);margin-bottom:20px;font-weight:500}
         @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
         @media(max-width:768px){.page-container{padding:32px 16px 80px}.page-title{font-size:26px}.form-section{padding:20px}.form-row{grid-template-columns:1fr}.form-row.triple{grid-template-columns:1fr 1fr}.form-row.quad{grid-template-columns:1fr 1fr}.stepper{gap:0}.step-label{display:none}.step-line{margin:0 8px}}
+        @media(max-width:480px){.form-row.triple{grid-template-columns:1fr}.form-row.quad{grid-template-columns:1fr}.chip{padding:6px 12px;font-size:12px}.photo-grid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}.page-container{padding:24px 12px 72px}.form-section{padding:16px}}
       `}</style>
 
       {showGate && (

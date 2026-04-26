@@ -57,6 +57,7 @@ export default function MessagesPage() {
   const [input, setInput] = useState('')
   const [typing, setTyping] = useState(false)
   const [search, setSearch] = useState('')
+  const [mobileView, setMobileView] = useState<'list' | 'chat'>('list')
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const conv = conversations[activeId]
@@ -68,6 +69,7 @@ export default function MessagesPage() {
   function selectConv(id: number) {
     setActiveId(id)
     setConvList(prev => prev.map(c => c.id === id ? {...c, unread:0} : c))
+    setMobileView('chat')
   }
 
   function now() {
@@ -163,11 +165,23 @@ export default function MessagesPage() {
         .chat-send-btn{width:40px;height:40px;border-radius:10px;background:var(--brown);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:opacity .15s;flex-shrink:0}
         .chat-send-btn:hover{opacity:.85}
         .chat-send-btn:disabled{opacity:.3;cursor:not-allowed}
-        @media(max-width:768px){nav{padding:0 16px}.nav-links{display:none}.messenger{grid-template-columns:1fr}}
+        .mobile-back-btn{display:none;align-items:center;gap:6px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--brown-mid);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;margin-right:4px;flex-shrink:0}
+        .mobile-back-btn:hover{background:var(--bg-soft)}
+        @media(max-width:768px){
+          nav{padding:0 16px}.nav-links{display:none}
+          body{overflow:auto}
+          .messenger{grid-template-columns:1fr;height:calc(100dvh - 60px)}
+          .mobile-back-btn{display:flex}
+          .messenger[data-view="chat"] .conv-panel{display:none}
+          .messenger[data-view="list"] .chat-panel{display:none}
+          .msg{max-width:80%}
+          .chat-messages{padding:16px}
+          .chat-input{padding:12px 16px}
+        }
       `}</style>
 
 
-      <div className="messenger">
+      <div className="messenger" data-view={mobileView}>
         {/* CONVERSATION LIST */}
         <div className="conv-panel">
           <div className="conv-header">
@@ -198,6 +212,10 @@ export default function MessagesPage() {
         {/* CHAT PANEL */}
         <div className="chat-panel">
           <div className="chat-header">
+            <button className="mobile-back-btn" onClick={() => setMobileView('list')} aria-label="Retour aux conversations">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+              Retour
+            </button>
             <div className="chat-header-avatar">{conv.initials}</div>
             <div className="chat-header-info">
               <h3>{conv.name}</h3>

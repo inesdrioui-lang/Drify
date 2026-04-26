@@ -2,6 +2,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import { signOut } from '@/app/auth/actions'
+import MobileMenu from '@/components/MobileMenu'
 
 export default async function Header() {
   const supabase = await createClient()
@@ -59,6 +60,7 @@ export default async function Header() {
           <Link href="/favoris">Favoris</Link>
           <Link href="/pro" style={{ color: 'var(--brown-mid)', fontWeight: 600 }}>Drify Pro</Link>
         </div>
+        <MobileMenu isLoggedIn={!!user} role={profile?.role ?? null} />
         <div className="nav-end">
           {!user ? (
             <>

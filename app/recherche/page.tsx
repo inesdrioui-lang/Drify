@@ -59,6 +59,7 @@ function RechercheContent() {
   const [dpeMax, setDpeMax] = useState(5)
   const [sort, setSort] = useState('recent')
   const [view, setView] = useState<'list'|'map'>('list')
+  const [filtersOpen, setFiltersOpen] = useState(false)
   const [filtered, setFiltered] = useState<Listing[]>([])
   const [favs, setFavsState] = useState<number[]>([])
   const [mapReady, setMapReady] = useState(false)
@@ -280,9 +281,31 @@ function RechercheContent() {
         .no-results h3 { font-size:18px; font-weight:700; color:var(--text); margin-bottom:6px; }
         .no-results p { font-size:14px; }
 
+        .filter-toggle-btn { display:none; align-items:center; gap:6px; padding:8px 14px; border-radius:9px; border:1px solid var(--border); background:var(--bg-card); color:var(--brown-mid); font-size:13px; font-weight:600; cursor:pointer; font-family:inherit; flex-shrink:0; white-space:nowrap; }
+        .filter-toggle-btn:hover { background:var(--bg-soft); }
+        .filter-toggle-btn.has-filters { border-color:var(--brown-light); color:var(--brown); }
+        .filters-overlay-bg { display:none; position:fixed; inset:0; z-index:49; background:rgba(26,15,8,0.4); }
         @media (max-width:1100px) { .listings-grid { grid-template-columns:repeat(2,1fr); } }
         @media (max-width:900px) { .filters-panel { width:240px; } .listings-grid { grid-template-columns:1fr; } }
-        @media (max-width:700px) { nav { padding:0 16px; } .nav-links { display:none; } .filters-panel { display:none; } }
+        @media (max-width:700px) {
+          nav { padding:0 16px; } .nav-links { display:none; }
+          .filter-toggle-btn { display:flex; }
+          .view-toggle { display:none; }
+          .filters-panel {
+            position:fixed; left:0; top:60px; bottom:0; z-index:50;
+            width:min(320px, 88vw); transform:translateX(-100%);
+            transition:transform 0.25s ease; box-shadow:4px 0 24px rgba(26,15,8,0.12);
+            display:flex; flex-direction:column;
+          }
+          .filters-panel.open { transform:translateX(0); }
+          .filters-close-btn { display:block !important; }
+          .filters-overlay-bg.open { display:block; }
+          .page-body { height:auto; overflow:visible; flex-direction:column; }
+          .results-area { padding:16px; overflow:visible; }
+          .topbar { flex-wrap:wrap; gap:10px; padding:10px 16px; }
+          .search-inline { max-width:100%; }
+          .topbar-right { width:100%; justify-content:space-between; }
+        }
       `}</style>
 
 
@@ -302,6 +325,10 @@ function RechercheContent() {
           <button onClick={() => applyFilters()}>Rechercher</button>
         </div>
         <div className="topbar-right">
+          <button className="filter-toggle-btn" onClick={() => setFiltersOpen(true)}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+            Filtres
+          </button>
           <span className="result-count">{filtered.length} résultat{filtered.length !== 1 ? 's' : ''}</span>
           <select className="sort-select" value={sort} onChange={e => { setSort(e.target.value); applyFilters({ s: e.target.value }) }}>
             <option value="recent">Plus récent</option>
@@ -326,8 +353,11 @@ function RechercheContent() {
         </div>
       </div>
 
+      {/* Overlay backdrop mobile */}
+      <div className={`filters-overlay-bg${filtersOpen ? ' open' : ''}`} onClick={() => setFiltersOpen(false)} />
+
       <div className="page-body" onClick={() => setDropdownOpen(false)}>
-        <aside className="filters-panel">
+        <aside className={`filters-panel${filtersOpen ? ' open' : ''}`}>
           <div className="filter-group">
             <span className="filter-label">Type de bien</span>
             <div className="type-grid">
@@ -432,6 +462,10 @@ function RechercheContent() {
           <div className="filter-divider"></div>
 
           <button className="reset-btn" onClick={resetFilters}>Réinitialiser les filtres</button>
+          {/* Bouton fermer visible uniquement sur mobile */}
+          <button onClick={() => setFiltersOpen(false)} style={{display:'none',width:'100%',marginTop:12,padding:'12px',borderRadius:10,fontWeight:700,fontSize:14,fontFamily:'inherit',background:'var(--brown)',color:'#fff',border:'none',cursor:'pointer'}} className="filters-close-btn">
+            Voir les résultats
+          </button>
         </aside>
 
         {view === 'list' ? (
