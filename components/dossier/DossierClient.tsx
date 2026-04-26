@@ -35,6 +35,27 @@ const SITUATION_OPTIONS = [
   { value: 'sans_emploi', label: 'Sans emploi' },
 ]
 
+const TYPE_ACTIVITE_OPTIONS = [
+  { value: 'consultant', label: 'Consultant' },
+  { value: 'developpeur', label: 'Développeur' },
+  { value: 'designer', label: 'Designer' },
+  { value: 'artisan', label: 'Artisan' },
+  { value: 'commercant', label: 'Commerçant' },
+  { value: 'profession_liberale', label: 'Profession libérale' },
+  { value: 'autre', label: 'Autre' },
+]
+
+const SITUATIONS_WITH_SUBFIELDS = ['salarie_cdi', 'salarie_cdd', 'independant']
+
+function parseMMAAAA(s: string): Date | null {
+  const m = s.match(/^(\d{2})\/(\d{4})$/)
+  if (!m) return null
+  const month = parseInt(m[1])
+  const year = parseInt(m[2])
+  if (month < 1 || month > 12) return null
+  return new Date(year, month - 1, 1)
+}
+
 function getDocTypes(situationPro: string): { type: string; label: string; description: string; required: boolean }[] {
   const base = [
     { type: 'identite', label: "Pièce d'identité", description: 'CNI ou passeport en cours de validité', required: true },
@@ -150,6 +171,14 @@ export default function DossierClient({ userId, initialProfile, initialGarants, 
   const [showGarant2, setShowGarant2] = useState(initialGarants.length >= 2)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // Sub-fields for conditional situation fields (local state, not persisted yet)
+  const [periodeEssai, setPeriodeEssai] = useState<'oui' | 'non' | ''>('')
+  const [cddDebut, setCddDebut] = useState('')
+  const [cddFin, setCddFin] = useState('')
+  const [activiteDepuis, setActiviteDepuis] = useState('')
+  const [typeActivite, setTypeActivite] = useState('')
+  const [cddDateError, setCddDateError] = useState<string | null>(null)
+
   const situationPro = profile.situation_pro ?? ''
   const isEtudiant = situationPro === 'etudiant'
   const docTypes = getDocTypes(situationPro)
@@ -171,7 +200,24 @@ export default function DossierClient({ userId, initialProfile, initialGarants, 
     setTimeout(() => setSaveState('idle'), 2000)
   }, [])
 
+  function validateCddDates(debut: string, fin: string) {
+    if (!debut || !fin) { setCddDateError(null); return }
+    const d = parseMMAAAA(debut)
+    const f = parseMMAAAA(fin)
+    if (!d || !f) { setCddDateError(null); return }
+    if (f <= d) setCddDateError('La date de fin doit être postérieure à la date de début.')
+    else setCddDateError(null)
+  }
+
   function updateProfile(field: keyof TenantProfileData, value: string | number | null) {
+    if (field === 'situation_pro') {
+      setPeriodeEssai('')
+      setCddDebut('')
+      setCddFin('')
+      setActiviteDepuis('')
+      setTypeActivite('')
+      setCddDateError(null)
+    }
     setProfile(prev => {
       const next = { ...prev, [field]: value }
       if (debounceRef.current) clearTimeout(debounceRef.current)
@@ -333,6 +379,30 @@ export default function DossierClient({ userId, initialProfile, initialGarants, 
         .btn-share--disabled { background: var(--bg-soft); color: var(--text-light); border: 1px solid var(--border); cursor: not-allowed; }
         .btn-share--disabled:hover { opacity: 1; }
 
+        /* ── Conditional sub-fields ── */
+        .subfields-outer { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.26s ease; }
+        .subfields-outer.open { grid-template-rows: 1fr; }
+        .subfields-inner { overflow: hidden; }
+        .subfields-inner > * { opacity: 0; transition: opacity 0.18s ease 0s; }
+        .subfields-outer.open .subfields-inner > * { opacity: 1; transition: opacity 0.2s ease 0.1s; }
+        .subfields-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding-top: 16px; }
+        .subfields-section-label { font-size: 11px; font-weight: 700; color: var(--brown-light); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; padding-top: 16px; display: flex; align-items: center; gap: 6px; }
+        .subfields-section-label::before { content: ''; display: inline-block; width: 3px; height: 12px; background: var(--brown-light); border-radius: 2px; }
+
+        /* ── Radio toggle (CDI période essai) ── */
+        .radio-toggle { display: flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+        .radio-toggle-label { flex: 1; position: relative; }
+        .radio-toggle-input { position: absolute; opacity: 0; width: 0; height: 0; }
+        .radio-toggle-btn { display: block; padding: 10px 14px; text-align: center; font-size: 13px; font-weight: 500; color: var(--text-muted); cursor: pointer; transition: background 0.12s, color 0.12s; border-right: 1px solid var(--border); background: var(--bg); }
+        .radio-toggle-label:last-child .radio-toggle-btn { border-right: none; }
+        .radio-toggle-input:checked + .radio-toggle-btn { background: var(--brown); color: #fff; font-weight: 700; }
+        .radio-toggle-input:focus-visible + .radio-toggle-btn { outline: 2px solid var(--brown-light); outline-offset: -2px; }
+
+        /* ── Field extras ── */
+        .field-required { color: #9B3A2A; font-weight: 800; }
+        .field-error-msg { font-size: 12px; color: #9B3A2A; background: #FAECEC; padding: 8px 12px; border-radius: 8px; margin: 0; }
+        .field-input--error { border-color: #9B3A2A !important; }
+
         /* ── Mobile accordion ── */
         @media (max-width: 768px) {
           .dc-layout { grid-template-columns: 1fr; gap: 0; padding: 24px 16px 60px; }
@@ -342,6 +412,7 @@ export default function DossierClient({ userId, initialProfile, initialGarants, 
           .field-grid { grid-template-columns: 1fr; }
           .garant-grid { grid-template-columns: 1fr; }
           .solv-wrap { grid-template-columns: 1fr; }
+          .subfields-grid { grid-template-columns: 1fr; }
         }
         @media (min-width: 769px) {
           .dc-section-header { pointer-events: none; }
@@ -460,7 +531,13 @@ export default function DossierClient({ userId, initialProfile, initialGarants, 
             <div className="field-grid">
               <div>
                 <label className="field-label">Situation professionnelle</label>
-                <select className="field-select" value={profile.situation_pro ?? ''} onChange={e => updateProfile('situation_pro', e.target.value)}>
+                <select
+                  className="field-select"
+                  value={profile.situation_pro ?? ''}
+                  onChange={e => updateProfile('situation_pro', e.target.value)}
+                  aria-controls="situation-subfields"
+                  aria-expanded={SITUATIONS_WITH_SUBFIELDS.includes(situationPro)}
+                >
                   <option value="">Choisir…</option>
                   {SITUATION_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
@@ -469,6 +546,144 @@ export default function DossierClient({ userId, initialProfile, initialGarants, 
                 <label className="field-label">Type de revenus</label>
                 <input className="field-input" value={profile.type_revenus ?? ''} onChange={e => updateProfile('type_revenus', e.target.value)} placeholder="Salaire, pension, allocations…" />
               </div>
+
+              {/* ── Sous-champs conditionnels ── */}
+              <div className="field-full">
+                <div
+                  id="situation-subfields"
+                  className={`subfields-outer${SITUATIONS_WITH_SUBFIELDS.includes(situationPro) ? ' open' : ''}`}
+                  role="region"
+                  aria-live="polite"
+                  aria-atomic="false"
+                >
+                  <div className="subfields-inner">
+
+                    {/* CDI — Période d'essai */}
+                    {situationPro === 'salarie_cdi' && (
+                      <div>
+                        <div className="subfields-section-label">Précisions CDI</div>
+                        <div role="radiogroup" aria-labelledby="label-periode-essai">
+                          <label id="label-periode-essai" className="field-label">
+                            Période d&apos;essai <span className="field-required" aria-hidden="true">*</span>
+                          </label>
+                          <div className="radio-toggle" style={{ marginTop: 5 }}>
+                            <label className="radio-toggle-label">
+                              <input
+                                type="radio"
+                                name="periode_essai"
+                                value="non"
+                                checked={periodeEssai === 'non'}
+                                onChange={() => setPeriodeEssai('non')}
+                                className="radio-toggle-input"
+                                aria-label="Hors période d'essai"
+                              />
+                              <span className="radio-toggle-btn">Hors période d&apos;essai</span>
+                            </label>
+                            <label className="radio-toggle-label">
+                              <input
+                                type="radio"
+                                name="periode_essai"
+                                value="oui"
+                                checked={periodeEssai === 'oui'}
+                                onChange={() => setPeriodeEssai('oui')}
+                                className="radio-toggle-input"
+                                aria-label="En période d'essai"
+                              />
+                              <span className="radio-toggle-btn">En période d&apos;essai</span>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* CDD — Dates */}
+                    {situationPro === 'salarie_cdd' && (
+                      <div>
+                        <div className="subfields-section-label">Précisions CDD</div>
+                        <div className="subfields-grid">
+                          <div>
+                            <label className="field-label" htmlFor="cdd-debut">
+                              Date de début <span className="field-required" aria-hidden="true">*</span>
+                            </label>
+                            <input
+                              id="cdd-debut"
+                              className={`field-input${cddDateError ? ' field-input--error' : ''}`}
+                              value={cddDebut}
+                              onChange={e => { setCddDebut(e.target.value); validateCddDates(e.target.value, cddFin) }}
+                              placeholder="MM/AAAA"
+                              inputMode="numeric"
+                              aria-required="true"
+                              aria-describedby={cddDateError ? 'cdd-date-error' : undefined}
+                            />
+                          </div>
+                          <div>
+                            <label className="field-label" htmlFor="cdd-fin">
+                              Date de fin <span className="field-required" aria-hidden="true">*</span>
+                            </label>
+                            <input
+                              id="cdd-fin"
+                              className={`field-input${cddDateError ? ' field-input--error' : ''}`}
+                              value={cddFin}
+                              onChange={e => { setCddFin(e.target.value); validateCddDates(cddDebut, e.target.value) }}
+                              placeholder="MM/AAAA"
+                              inputMode="numeric"
+                              aria-required="true"
+                              aria-describedby={cddDateError ? 'cdd-date-error' : undefined}
+                            />
+                          </div>
+                          {cddDateError && (
+                            <div className="field-full">
+                              <p id="cdd-date-error" className="field-error-msg" role="alert">{cddDateError}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Indépendant / Freelance */}
+                    {situationPro === 'independant' && (
+                      <div>
+                        <div className="subfields-section-label">Précisions activité indépendante</div>
+                        <div className="subfields-grid">
+                          <div>
+                            <label className="field-label" htmlFor="activite-depuis">
+                              Activité exercée depuis <span className="field-required" aria-hidden="true">*</span>
+                            </label>
+                            <input
+                              id="activite-depuis"
+                              className="field-input"
+                              type="number"
+                              min="1970"
+                              max={new Date().getFullYear()}
+                              value={activiteDepuis}
+                              onChange={e => setActiviteDepuis(e.target.value)}
+                              placeholder="Ex. 2019"
+                              aria-required="true"
+                            />
+                          </div>
+                          <div>
+                            <label className="field-label" htmlFor="type-activite">
+                              Type d&apos;activité <span className="field-required" aria-hidden="true">*</span>
+                            </label>
+                            <select
+                              id="type-activite"
+                              className="field-select"
+                              value={typeActivite}
+                              onChange={e => setTypeActivite(e.target.value)}
+                              aria-required="true"
+                            >
+                              <option value="">Choisir…</option>
+                              {TYPE_ACTIVITE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                  </div>
+                </div>
+              </div>
+
               <div>
                 <label className="field-label">Revenus mensuels nets (€)</label>
                 <input
