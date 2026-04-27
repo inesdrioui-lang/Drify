@@ -210,7 +210,15 @@ export default function DossierClient({ userId, initialProfile, initialGarants, 
     setGenError(null)
     try {
       const res = await fetch('/api/generate-dossier')
-      const data = await res.json()
+      const text = await res.text()
+      let data: { url?: string; error?: string }
+      try {
+        data = JSON.parse(text)
+      } catch {
+        setGenError('Erreur serveur (réponse invalide). Vérifiez les logs Vercel.')
+        setGenerating(false)
+        return
+      }
       if (data.url) {
         window.open(data.url, '_blank', 'noopener,noreferrer')
         setPreviewed(true)
@@ -218,7 +226,7 @@ export default function DossierClient({ userId, initialProfile, initialGarants, 
         setGenError(data.error ?? 'Erreur lors de la génération du PDF.')
       }
     } catch {
-      setGenError('Erreur réseau. Veuillez réessayer.')
+      setGenError('Impossible de joindre le serveur. Vérifiez votre connexion.')
     }
     setGenerating(false)
   }

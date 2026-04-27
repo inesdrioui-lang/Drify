@@ -303,75 +303,81 @@ async function addEndPage(pdfDoc: PDFDocument, font: PDFFont, boldFont: PDFFont)
 }
 
 export async function GET() {
-  const supabase = await createClient()
+  try {
+    const supabase = await createClient()
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
 
-  const [{ data: profile }, { data: garants }, { data: allDocs }] = await Promise.all([
-    supabase.from('tenant_profiles').select('*').eq('user_id', user.id).single(),
-    supabase.from('garants')
-      .select('id, prenom, nom, lien, situation_pro, revenus_mensuels, ordre')
-      .eq('user_id', user.id).order('ordre'),
-    supabase.from('documents')
-      .select('id, nom, categorie, fichier_path, garant_id')
-      .eq('user_id', user.id).order('created_at'),
-  ])
+    const [{ data: profile }, { data: garants }, { data: allDocs }] = await Promise.all([
+      supabase.from('tenant_profiles').select('*').eq('user_id', user.id).single(),
+      supabase.from('garants')
+        .select('id, prenom, nom, lien, situation_pro, revenus_mensuels, ordre')
+        .eq('user_id', user.id).order('ordre'),
+      supabase.from('documents')
+        .select('id, nom, categorie, fichier_path, garant_id')
+        .eq('user_id', user.id).order('created_at'),
+    ])
 
-  const pdfDoc   = await PDFDocument.create()
-  const font     = await pdfDoc.embedFont(StandardFonts.Helvetica)
-  const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
+    const pdfDoc   = await PDFDocument.create()
+    const font     = await pdfDoc.embedFont(StandardFonts.Helvetica)
+    const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
 
-  // 1. Cover
-  await addCoverPage(pdfDoc, profile, font, boldFont)
+    // 1. Cover
+    await addCoverPage(pdfDoc, profile, font, boldFont)
 
-  // 2. Locataire section
-  const locataireDocs = (allDocs ?? []).filter((d) => !d.garant_id)
-  await addSectionPage(pdfDoc, 'Partie 1 — Locataire', font, boldFont)
-  for (const doc of locataireDocs) {
-    await addDocumentPages(pdfDoc, doc, supabase, font, boldFont)
-  }
+    // 2. Locataire section
+    const locataireDocs = (allDocs ?? []).filter((d) => !d.garant_id)
+    await addSectionPage(pdfDoc, 'Partie 1 — Locataire', font, boldFont)
+    for (const doc of locataireDocs) {
+      await addDocumentPages(pdfDoc, doc, supabase, font, boldFont)
+    }
 
-  // 3. Garant sections
-  if (garants && garants.length > 0) {
-    for (let i = 0; i < garants.length; i++) {
-      const garant = garants[i]
-      const title  = `Partie ${i + 2} — Garant : ${garant.prenom} ${garant.nom}`
-      await addSectionPage(pdfDoc, title, font, boldFont, garant)
-      const garantDocs = (allDocs ?? []).filter((d) => d.garant_id === garant.id)
-      for (const doc of garantDocs) {
-        await addDocumentPages(pdfDoc, doc, supabase, font, boldFont)
+    // 3. Garant sections
+    if (garants && garants.length > 0) {
+      for (let i = 0; i < garants.length; i++) {
+        const garant = garants[i]
+        const title  = `Partie ${i + 2} — Garant : ${garant.prenom} ${garant.nom}`
+        await addSectionPage(pdfDoc, title, font, boldFont, garant)
+        const garantDocs = (allDocs ?? []).filter((d) => d.garant_id === garant.id)
+        for (const doc of garantDocs) {
+          await addDocumentPages(pdfDoc, doc, supabase, font, boldFont)
+        }
       }
     }
+
+    // 4. End page
+    await addEndPage(pdfDoc, font, boldFont)
+
+    const pdfBytes = await pdfDoc.save()
+
+    // Upload PDF
+    const storagePath = `${user.id}/${Date.now()}-dossier.pdf`
+    const { error: uploadError } = await supabase.storage
+      .from('dossiers-generes')
+      .upload(storagePath, pdfBytes, { contentType: 'application/pdf', upsert: true })
+
+    if (uploadError) {
+      return NextResponse.json({ error: 'Bucket manquant ou accès refusé : ' + uploadError.message }, { status: 500 })
+    }
+
+    const { data: signed } = await supabase.storage
+      .from('dossiers-generes')
+      .createSignedUrl(storagePath, 3600)
+
+    const url = signed?.signedUrl ?? null
+
+    // Best-effort — column may not exist yet
+    if (url) {
+      await supabase.from('tenant_profiles')
+        .update({ pdf_url: url })
+        .eq('user_id', user.id)
+    }
+
+    return NextResponse.json({ url })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    console.error('[generate-dossier]', message)
+    return NextResponse.json({ error: 'Erreur serveur : ' + message }, { status: 500 })
   }
-
-  // 4. End page
-  await addEndPage(pdfDoc, font, boldFont)
-
-  const pdfBytes = await pdfDoc.save()
-
-  // Upload PDF
-  const storagePath = `${user.id}/${Date.now()}-dossier.pdf`
-  const { error: uploadError } = await supabase.storage
-    .from('dossiers-generes')
-    .upload(storagePath, pdfBytes, { contentType: 'application/pdf', upsert: true })
-
-  if (uploadError) {
-    return NextResponse.json({ error: 'Stockage : ' + uploadError.message }, { status: 500 })
-  }
-
-  const { data: signed } = await supabase.storage
-    .from('dossiers-generes')
-    .createSignedUrl(storagePath, 3600)
-
-  const url = signed?.signedUrl ?? null
-
-  // Save URL to profile (best-effort, column may not exist yet)
-  if (url) {
-    await supabase.from('tenant_profiles')
-      .update({ pdf_url: url })
-      .eq('user_id', user.id)
-  }
-
-  return NextResponse.json({ url })
 }
