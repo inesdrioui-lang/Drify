@@ -41,8 +41,20 @@ const SIT_LABELS: Record<string, string> = {
   sans_emploi:  'Sans emploi',
 }
 
+// WinAnsi (PDF standard fonts) ne supporte pas les espaces spéciaux fr-FR
+function safe(text: string): string {
+  return text
+    .replace(/\u202f/g, ' ')  // espace fine insécable → espace normale
+    .replace(/\u00a0/g, ' ')  // espace insécable → espace normale
+    .replace(/[^\x00-\xFF]/g, '?') // tout autre char non-latin → ?
+}
+
 function frDate(date: Date) {
-  return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+  return safe(date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }))
+}
+
+function frNum(n: number): string {
+  return safe(n.toLocaleString('fr-FR'))
 }
 
 function addWatermark(page: PDFPage, font: PDFFont) {
@@ -87,8 +99,8 @@ async function addCoverPage(
   })
 
   // Tenant name
-  const firstName = String(profile?.prenom ?? '')
-  const lastName  = String(profile?.nom ?? '').toUpperCase()
+  const firstName = safe(String(profile?.prenom ?? ''))
+  const lastName  = safe(String(profile?.nom ?? '').toUpperCase())
   const name = [firstName, lastName].filter(Boolean).join(' ') || 'Locataire'
   page.drawText(name, { x: MARGIN, y: PAGE_H - 220, size: 28, font: boldFont, color: BRAND })
 
@@ -100,16 +112,16 @@ async function addCoverPage(
 
   // Profile summary
   const items: [string, string][] = []
-  if (profile?.situation_pro)   items.push(['Situation professionnelle', SIT_LABELS[String(profile.situation_pro)] ?? String(profile.situation_pro)])
-  if (profile?.revenus_mensuels) items.push(['Revenus mensuels nets',   `${Number(profile.revenus_mensuels).toLocaleString('fr-FR')} €`])
-  if (profile?.loyer_cible)      items.push(['Loyer cible',             `${Number(profile.loyer_cible).toLocaleString('fr-FR')} €/mois`])
-  if (profile?.adresse_actuelle) items.push(['Adresse actuelle',        String(profile.adresse_actuelle)])
-  if (profile?.telephone)        items.push(['Téléphone',               String(profile.telephone)])
+  if (profile?.situation_pro)    items.push(['Situation professionnelle', safe(SIT_LABELS[String(profile.situation_pro)] ?? String(profile.situation_pro))])
+  if (profile?.revenus_mensuels) items.push(['Revenus mensuels nets',     `${frNum(Number(profile.revenus_mensuels))} EUR`])
+  if (profile?.loyer_cible)      items.push(['Loyer cible',               `${frNum(Number(profile.loyer_cible))} EUR/mois`])
+  if (profile?.adresse_actuelle) items.push(['Adresse actuelle',          safe(String(profile.adresse_actuelle))])
+  if (profile?.telephone)        items.push(['Telephone',                 safe(String(profile.telephone))])
 
   let y = PAGE_H - 270
   for (const [label, value] of items) {
-    page.drawText(label, { x: MARGIN,       y, size: 9,  font,      color: GRAY  })
-    page.drawText(value, { x: MARGIN + 190, y, size: 9,  font: boldFont, color: BRAND })
+    page.drawText(label, { x: MARGIN,       y, size: 9, font,           color: GRAY  })
+    page.drawText(value, { x: MARGIN + 190, y, size: 9, font: boldFont, color: BRAND })
     y -= 20
   }
 
@@ -147,11 +159,11 @@ async function addSectionPage(
   page.drawText(title, { x: MARGIN, y: PAGE_H - 100, size: 22, font: boldFont, color: BRAND })
 
   if (person) {
-    const line = [person.prenom, person.nom?.toUpperCase(), person.lien ? `(${person.lien})` : '']
-      .filter(Boolean).join(' ')
+    const line = safe([person.prenom, person.nom?.toUpperCase(), person.lien ? `(${person.lien})` : '']
+      .filter(Boolean).join(' '))
     page.drawText(line, { x: MARGIN, y: PAGE_H - 126, size: 11, font, color: GRAY })
     if (person.revenus_mensuels) {
-      page.drawText(`Revenus : ${person.revenus_mensuels.toLocaleString('fr-FR')} €/mois`, {
+      page.drawText(safe(`Revenus : ${frNum(person.revenus_mensuels)} EUR/mois`), {
         x: MARGIN, y: PAGE_H - 142, size: 9, font, color: GRAY,
       })
     }
