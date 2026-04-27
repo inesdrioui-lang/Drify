@@ -5,7 +5,7 @@ import { saveTenantProfile } from '@/app/locataire/dossier/actions'
 import type { TenantProfileData, GarantData } from '@/app/locataire/dossier/actions'
 import type { DocEntry } from '@/components/dossier/DocumentUpload'
 import DocumentUpload from '@/components/dossier/DocumentUpload'
-import GarantForm from '@/components/dossier/GarantForm'
+import GarantBlock from '@/components/dossier/GarantBlock'
 import SolvabilityScore from '@/components/dossier/SolvabilityScore'
 import DossierSummary from '@/components/dossier/DossierSummary'
 import GuarantorBanner from '@/components/dossier/GuarantorBanner'
@@ -24,8 +24,8 @@ interface DossierClientProps {
 const SECTIONS = [
   { id: 'identite', label: 'Identité' },
   { id: 'situation', label: 'Situation & revenus' },
-  { id: 'garants', label: 'Garants' },
   { id: 'documents', label: 'Documents' },
+  { id: 'garants', label: 'Garant(s)' },
 ]
 
 const SITUATION_OPTIONS = [
@@ -173,6 +173,7 @@ export default function DossierClient({ userId, initialProfile, initialGarants, 
   const [documents, setDocuments] = useState<DocEntry[]>(initialDocuments)
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [showGarant2, setShowGarant2] = useState(initialGarants.length >= 2)
+  const [showOptionalGarant, setShowOptionalGarant] = useState(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Sub-fields for conditional situation fields (local state, not persisted yet)
@@ -242,6 +243,7 @@ export default function DossierClient({ userId, initialProfile, initialGarants, 
 
   const garant1 = garants.find(g => g.ordre === 1)
   const garant2 = garants.find(g => g.ordre === 2)
+  const garantRequis = isEtudiant || (guarantorResult?.required === true)
 
   const doAutoSave = useCallback(async (data: TenantProfileData) => {
     setSaveState('saving')
@@ -461,6 +463,31 @@ export default function DossierClient({ userId, initialProfile, initialGarants, 
         .field-error-msg { font-size: 12px; color: #9B3A2A; background: #FAECEC; padding: 8px 12px; border-radius: 8px; margin: 0; }
         .field-input--error { border-color: #9B3A2A !important; }
 
+        /* ── GarantBlock ── */
+        .gblock { margin-bottom: 16px; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+        .gblock--animated { animation: gblock-enter 0.2s ease-out; }
+        @keyframes gblock-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .gblock-form { padding: 16px; }
+        .gblock-form-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+        .gblock-form-title { font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+        .gblock-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .gblock-col-full { grid-column: 1 / -1; }
+        .gblock-subsec { padding-bottom: 16px; border-bottom: 1px solid var(--border-soft); margin-bottom: 16px; }
+        .gblock-subsec:last-of-type { border-bottom: none; padding-bottom: 0; }
+        .gblock-subsec-title { font-size: 11px; font-weight: 700; color: var(--brown-light); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+        .gblock-subsec-title::before { content: ''; display: inline-block; width: 3px; height: 12px; background: var(--brown-light); border-radius: 2px; }
+        .gblock-actions { display: flex; align-items: center; gap: 8px; margin-top: 14px; }
+        .gblock-summary { padding: 14px 16px; display: flex; align-items: center; gap: 12px; background: var(--bg-soft); }
+        .gblock-summary-info { flex: 1; }
+        .gblock-summary-name { font-size: 14px; font-weight: 700; color: var(--text); }
+        .gblock-summary-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+        .gblock-summary-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+        .gblock-docs { padding: 16px; border-top: 1px solid var(--border-soft); }
+        .garant-optional-msg { text-align: center; padding: 28px 16px; }
+        .garant-optional-msg p { font-size: 13px; color: var(--text-muted); margin: 0 0 14px; }
+        .btn-add-garant-optional { display: inline-flex; align-items: center; gap: 7px; padding: 9px 18px; border: 1px dashed var(--border); border-radius: 10px; background: transparent; font-size: 13px; font-weight: 600; color: var(--text-muted); cursor: pointer; font-family: inherit; transition: all 0.12s; }
+        .btn-add-garant-optional:hover { border-color: var(--brown-light); color: var(--brown); background: var(--bg-soft); }
+
         /* ── Mobile accordion ── */
         @media (max-width: 768px) {
           .dc-layout { grid-template-columns: 1fr; gap: 0; padding: 24px 16px 60px; }
@@ -469,6 +496,7 @@ export default function DossierClient({ userId, initialProfile, initialGarants, 
           .dc-section-body { padding: 0 16px 16px; }
           .field-grid { grid-template-columns: 1fr; }
           .garant-grid { grid-template-columns: 1fr; }
+          .gblock-grid { grid-template-columns: 1fr; }
           .solv-wrap { grid-template-columns: 1fr; }
           .subfields-grid { grid-template-columns: 1fr; }
         }
@@ -782,73 +810,7 @@ export default function DossierClient({ userId, initialProfile, initialGarants, 
             {guarantorResult && <GuarantorBanner result={guarantorResult} />}
           </Section>
 
-          {/* ── Section 3 : Garants ── */}
-          <Section
-            id="garants"
-            title="Garants"
-            subtitle={isEtudiant ? 'Obligatoire pour les étudiants' : 'Optionnel si vos revenus couvrent le seuil'}
-            active={activeSection === 'garants'}
-            onToggle={() => setActiveSection(prev => prev === 'garants' ? '' : 'garants')}
-            icon={
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-              </svg>
-            }
-          >
-            <div style={{ marginTop: 16 }}>
-              {isEtudiant && garants.length === 0 && (
-                <div className="garant-mandatory-badge">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-                  </svg>
-                  En tant qu&apos;étudiant(e), un garant est obligatoire pour valider votre dossier.
-                </div>
-              )}
-
-              {garant1 ? (
-                <GarantForm
-                  ordre={1}
-                  initial={garant1}
-                  onSaved={g => setGarants(prev => [g, ...prev.filter(x => x.ordre !== 1)])}
-                  onDeleted={id => setGarants(prev => prev.filter(x => x.id !== id))}
-                />
-              ) : (
-                <GarantForm
-                  ordre={1}
-                  onSaved={g => setGarants(prev => [g, ...prev])}
-                  onDeleted={id => setGarants(prev => prev.filter(x => x.id !== id))}
-                />
-              )}
-
-              {garants.length >= 1 && !garant2 && !showGarant2 && (
-                <button type="button" className="btn-add-garant" onClick={() => setShowGarant2(true)}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
-                  </svg>
-                  Ajouter un second garant
-                </button>
-              )}
-
-              {(showGarant2 || garant2) && (
-                garant2 ? (
-                  <GarantForm
-                    ordre={2}
-                    initial={garant2}
-                    onSaved={g => setGarants(prev => [g, ...prev.filter(x => x.ordre !== 2)])}
-                    onDeleted={id => { setGarants(prev => prev.filter(x => x.id !== id)); setShowGarant2(false) }}
-                  />
-                ) : (
-                  <GarantForm
-                    ordre={2}
-                    onSaved={g => setGarants(prev => [...prev, g])}
-                    onDeleted={() => setShowGarant2(false)}
-                  />
-                )
-              )}
-            </div>
-          </Section>
-
-          {/* ── Section 4 : Documents ── */}
+          {/* ── Section 3 : Documents ── */}
           <Section
             id="documents"
             title="Documents"
@@ -898,48 +860,101 @@ export default function DossierClient({ userId, initialProfile, initialGarants, 
                 )
               })
             )}
+          </Section>
 
-            {/* Garant documents */}
-            {garants.length > 0 && (
-              <div style={{ marginTop: 20 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 12 }}>
-                  Documents des garants
+          {/* ── Section 4 : Garant(s) ── */}
+          <Section
+            id="garants"
+            title="Garant(s)"
+            subtitle={garantRequis ? 'Requis pour ce dossier' : 'Optionnel — renforce votre dossier'}
+            active={activeSection === 'garants'}
+            onToggle={() => setActiveSection(prev => prev === 'garants' ? '' : 'garants')}
+            icon={
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+            }
+          >
+            <div style={{ marginTop: 16 }}>
+              {isEtudiant && garants.length === 0 && (
+                <div className="garant-mandatory-badge">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  En tant qu&apos;étudiant(e), un garant est obligatoire pour valider votre dossier.
                 </div>
-                {garants.map(g => (
-                  <div key={g.id} style={{ marginBottom: 16 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 8 }}>
-                      {g.prenom} {g.nom}
+              )}
+
+              {!garantRequis && !showOptionalGarant && !garant1 ? (
+                <div className="garant-optional-msg">
+                  <p>Votre profil ne nécessite pas de garant pour l&apos;instant.</p>
+                  <button
+                    type="button"
+                    className="btn-add-garant-optional"
+                    onClick={() => setShowOptionalGarant(true)}
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    Ajouter un garant quand même
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {!garantRequis && !garant1 && showOptionalGarant && (
+                    <div style={{ marginBottom: 12 }}>
+                      <button
+                        type="button"
+                        className="btn-garant-cancel"
+                        onClick={() => setShowOptionalGarant(false)}
+                      >
+                        ← Annuler
+                      </button>
                     </div>
-                    {['identite', 'fiches_salaire', 'avis_imposition'].map(type => {
-                      const gdocs = documents.filter(d => d.type_document === `garant_${type}` && d.fichier_path.includes(g.id))
-                      const labels: Record<string, string> = {
-                        identite: "Pièce d'identité du garant",
-                        fiches_salaire: 'Bulletins de salaire du garant',
-                        avis_imposition: "Avis d'imposition du garant",
-                      }
-                      return (
-                        <div key={type} className="doc-type-group" style={{ paddingTop: 10 }}>
-                          <div className="doc-type-header">
-                            <div className="doc-type-label">{labels[type]}</div>
-                            {gdocs.length > 0 ? <span className="doc-type-ok">✓</span> : <span className="doc-type-required">Requis</span>}
-                          </div>
-                          <DocumentUpload
-                            userId={userId}
-                            typeDocument={`garant_${type}`}
-                            label={labels[type]}
-                            documents={gdocs}
-                            onAdded={addDocument}
-                            onRemoved={removeDocFromState}
-                            garantId={g.id}
-                            storagePrefix={`garant_${g.ordre}/${type}`}
-                          />
-                        </div>
-                      )
-                    })}
-                  </div>
-                ))}
-              </div>
-            )}
+                  )}
+
+                  <GarantBlock
+                    ordre={1}
+                    userId={userId}
+                    initialGarant={garant1}
+                    allDocuments={documents}
+                    onSaved={g => setGarants(prev => [g, ...prev.filter(x => x.ordre !== 1)])}
+                    onDeleted={id => {
+                      setGarants(prev => prev.filter(x => x.id !== id))
+                      if (!garantRequis) setShowOptionalGarant(false)
+                    }}
+                    onDocAdded={addDocument}
+                    onDocRemoved={removeDocFromState}
+                  />
+
+                  {garant1 && !garant2 && !showGarant2 && (
+                    <button type="button" className="btn-add-garant" onClick={() => setShowGarant2(true)}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
+                      </svg>
+                      Ajouter un second garant
+                    </button>
+                  )}
+
+                  {(showGarant2 || garant2) && (
+                    <GarantBlock
+                      ordre={2}
+                      userId={userId}
+                      initialGarant={garant2}
+                      allDocuments={documents}
+                      onSaved={g => setGarants(prev => [...prev.filter(x => x.ordre !== 2), g])}
+                      onDeleted={id => {
+                        setGarants(prev => prev.filter(x => x.id !== id))
+                        setShowGarant2(false)
+                      }}
+                      onDocAdded={addDocument}
+                      onDocRemoved={removeDocFromState}
+                      isNew={!garant2}
+                    />
+                  )}
+                </>
+              )}
+            </div>
           </Section>
         </main>
       </div>
