@@ -17,12 +17,13 @@ export default function FileUpload({ categorie, userId }: FileUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null)
 
   async function handleFile(file: File) {
-    if (file.type !== 'application/pdf') {
-      setError('Seuls les fichiers PDF sont acceptés')
+    const allowed = ['application/pdf', 'image/jpeg', 'image/png', 'image/heic', 'image/heif']
+    if (!allowed.includes(file.type) && !file.name.match(/\.(pdf|jpg|jpeg|png|heic)$/i)) {
+      setError('Format non accepté. PDF, JPG, PNG ou HEIC uniquement.')
       return
     }
-    if (file.size > 5 * 1024 * 1024) {
-      setError('Le fichier ne doit pas dépasser 5 Mo')
+    if (file.size > 20 * 1024 * 1024) {
+      setError('Le fichier ne doit pas dépasser 20 Mo')
       return
     }
 
@@ -108,7 +109,7 @@ export default function FileUpload({ categorie, userId }: FileUploadProps) {
         role="button"
         tabIndex={0}
         onKeyDown={(e) => e.key === 'Enter' && !uploading && inputRef.current?.click()}
-        aria-label="Zone d'upload de document PDF"
+        aria-label="Zone d'upload de document"
       >
         {uploading ? (
           <>
@@ -124,8 +125,8 @@ export default function FileUpload({ categorie, userId }: FileUploadProps) {
                 <line x1="12" y1="3" x2="12" y2="15"/>
               </svg>
             </div>
-            <div className="fu-label">Glisser un PDF ici ou cliquer</div>
-            <div className="fu-sub">PDF uniquement · 5 Mo maximum</div>
+            <div className="fu-label">Glisser un fichier ici ou cliquer</div>
+            <div className="fu-sub">PDF ou image (JPG, PNG, HEIC) · 20 Mo max</div>
           </>
         )}
 
@@ -141,7 +142,7 @@ export default function FileUpload({ categorie, userId }: FileUploadProps) {
       <input
         ref={inputRef}
         type="file"
-        accept="application/pdf"
+        accept="application/pdf,image/jpeg,image/png,image/heic,image/heif,.heic"
         style={{ display: 'none' }}
         onChange={onChange}
         aria-hidden="true"

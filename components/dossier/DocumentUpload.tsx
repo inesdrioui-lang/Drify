@@ -61,12 +61,13 @@ export default function DocumentUpload({
 
   async function handleFile(file: File) {
     setUploadError('')
-    if (file.type !== 'application/pdf') {
-      setUploadError('Seuls les fichiers PDF sont acceptés.')
+    const allowed = ['application/pdf', 'image/jpeg', 'image/png', 'image/heic', 'image/heif']
+    if (!allowed.includes(file.type) && !file.name.match(/\.(pdf|jpg|jpeg|png|heic)$/i)) {
+      setUploadError('Format non accepté. PDF, JPG, PNG ou HEIC uniquement.')
       return
     }
-    if (file.size > 5 * 1024 * 1024) {
-      setUploadError('Taille maximale : 5 Mo.')
+    if (file.size > 20 * 1024 * 1024) {
+      setUploadError('Taille maximale : 20 Mo.')
       return
     }
 
@@ -77,7 +78,7 @@ export default function DocumentUpload({
     const supabase = createClient()
     const { error: storageError } = await supabase.storage
       .from('dossier-documents')
-      .upload(path, file, { contentType: 'application/pdf', upsert: false })
+      .upload(path, file, { contentType: file.type || 'application/octet-stream', upsert: false })
 
     if (storageError) {
       setUploadError('Erreur lors de l\'upload : ' + storageError.message)
@@ -200,7 +201,7 @@ export default function DocumentUpload({
         <input
           ref={inputRef}
           type="file"
-          accept="application/pdf"
+          accept="application/pdf,image/jpeg,image/png,image/heic,image/heif,.heic"
           style={{ display: 'none' }}
           onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = '' }}
         />
@@ -219,7 +220,7 @@ export default function DocumentUpload({
             <span className="docup-zone-text">
               {documents.length > 0 ? 'Ajouter un autre document' : `Déposer ou cliquer pour ajouter`}
             </span>
-            <span className="docup-zone-hint">PDF · 5 Mo max</span>
+            <span className="docup-zone-hint">PDF ou image (JPG, PNG, HEIC) · 20 Mo max</span>
           </div>
         )}
       </div>
