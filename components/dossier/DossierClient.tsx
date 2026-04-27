@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { saveTenantProfile } from '@/app/locataire/dossier/actions'
+import { saveTenantProfile, validateDossier } from '@/app/locataire/dossier/actions'
 import type { TenantProfileData, GarantData } from '@/app/locataire/dossier/actions'
 import type { DocEntry } from '@/components/dossier/DocumentUpload'
 import DocumentUpload from '@/components/dossier/DocumentUpload'
@@ -19,6 +19,7 @@ interface DossierClientProps {
   initialGarants: GarantWithId[]
   initialDocuments: DocEntry[]
   multiplicateurSeuil?: number
+  initialDossierValidated?: boolean
 }
 
 const SECTIONS = [
@@ -166,7 +167,7 @@ function calcDossierScore(
   return { score: Math.min(score, 100), missing }
 }
 
-export default function DossierClient({ userId, initialProfile, initialGarants, initialDocuments, multiplicateurSeuil = 3 }: DossierClientProps) {
+export default function DossierClient({ userId, initialProfile, initialGarants, initialDocuments, multiplicateurSeuil = 3, initialDossierValidated = false }: DossierClientProps) {
   const [activeSection, setActiveSection] = useState('identite')
   const [profile, setProfile] = useState<TenantProfileData>(initialProfile ?? {})
   const [garants, setGarants] = useState<GarantWithId[]>(initialGarants)
@@ -175,6 +176,13 @@ export default function DossierClient({ userId, initialProfile, initialGarants, 
   const [showGarant2, setShowGarant2] = useState(initialGarants.length >= 2)
   const [showOptionalGarant, setShowOptionalGarant] = useState(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // PDF generation state
+  const [generating, setGenerating]           = useState(false)
+  const [previewed, setPreviewed]             = useState(false)
+  const [validating, setValidating]           = useState(false)
+  const [dossierValidated, setDossierValidated] = useState(initialDossierValidated)
+  const [genError, setGenError]               = useState<string | null>(null)
 
   // Sub-fields for conditional situation fields (local state, not persisted yet)
   const [periodeEssai, setPeriodeEssai] = useState<'oui' | 'non' | ''>('')
@@ -196,6 +204,35 @@ export default function DossierClient({ userId, initialProfile, initialGarants, 
   const isComplete = missing.length === 0
 
   const seuilRecommande = loyerCible > 0 ? loyerCible * multiplicateurSeuil : null
+
+  async function handlePreview() {
+    setGenerating(true)
+    setGenError(null)
+    try {
+      const res = await fetch('/api/generate-dossier')
+      const data = await res.json()
+      if (data.url) {
+        window.open(data.url, '_blank', 'noopener,noreferrer')
+        setPreviewed(true)
+      } else {
+        setGenError(data.error ?? 'Erreur lors de la génération du PDF.')
+      }
+    } catch {
+      setGenError('Erreur réseau. Veuillez réessayer.')
+    }
+    setGenerating(false)
+  }
+
+  async function handleValidate() {
+    setValidating(true)
+    const result = await validateDossier()
+    if (result.success) {
+      setDossierValidated(true)
+    } else {
+      setGenError(result.error ?? 'Erreur lors de la validation.')
+    }
+    setValidating(false)
+  }
 
   const guarantorResult = useMemo(() => {
     if (!['salarie_cdi', 'salarie_cdd', 'independant'].includes(situationPro)) return null
@@ -956,6 +993,143 @@ export default function DossierClient({ userId, initialProfile, initialGarants, 
               )}
             </div>
           </Section>
+
+          {/* ── Génération PDF ── */}
+          <div className="dossier-pdf-section">
+            <style>{`
+              .dossier-pdf-section {
+                margin-top: 12px;
+                padding: 28px 32px;
+                background: var(--bg);
+                border: 1px solid var(--border);
+                border-radius: 16px;
+              }
+              .dossier-pdf-title {
+                font-size: 15px;
+                font-weight: 650;
+                color: var(--brown);
+                margin-bottom: 4px;
+              }
+              .dossier-pdf-desc {
+                font-size: 13px;
+                color: var(--text-muted);
+                margin-bottom: 20px;
+                line-height: 1.5;
+              }
+              .dossier-pdf-btns {
+                display: flex;
+                gap: 12px;
+                flex-wrap: wrap;
+              }
+              .btn-preview-pdf {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                padding: 11px 20px;
+                background: var(--brown);
+                color: #FBF5EB;
+                border: none;
+                border-radius: 10px;
+                font-size: 13px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: opacity 0.15s;
+              }
+              .btn-preview-pdf:hover:not(:disabled) { opacity: 0.85; }
+              .btn-preview-pdf:disabled { opacity: 0.5; cursor: not-allowed; }
+              .btn-validate-pdf {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                padding: 11px 20px;
+                background: transparent;
+                color: var(--brown);
+                border: 1.5px solid var(--brown);
+                border-radius: 10px;
+                font-size: 13px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: background 0.15s, color 0.15s;
+              }
+              .btn-validate-pdf:hover:not(:disabled) { background: var(--bg-soft); }
+              .btn-validate-pdf:disabled { opacity: 0.4; cursor: not-allowed; }
+              .btn-validate-pdf.validated {
+                background: #EAF3EE;
+                color: #4A7C59;
+                border-color: #4A7C59;
+              }
+              .dossier-pdf-hint {
+                margin-top: 12px;
+                font-size: 11px;
+                color: var(--text-muted);
+              }
+              .dossier-pdf-error {
+                margin-top: 10px;
+                font-size: 12px;
+                color: #9B3A2A;
+                font-weight: 500;
+              }
+            `}</style>
+
+            <div className="dossier-pdf-title">Générer mon dossier PDF</div>
+            <div className="dossier-pdf-desc">
+              Compilez tous vos documents en un dossier PDF sécurisé, prêt à envoyer aux propriétaires.
+              Un filigrane Drify sera apposé sur chaque page.
+            </div>
+
+            <div className="dossier-pdf-btns">
+              <button
+                type="button"
+                className="btn-preview-pdf"
+                onClick={handlePreview}
+                disabled={generating}
+              >
+                {generating ? (
+                  <>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
+                      <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                    </svg>
+                    Génération en cours…
+                  </>
+                ) : (
+                  <>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    Prévisualiser mon dossier
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                className={`btn-validate-pdf${dossierValidated ? ' validated' : ''}`}
+                onClick={handleValidate}
+                disabled={!previewed || validating || dossierValidated}
+              >
+                {dossierValidated ? (
+                  <>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                    Dossier validé
+                  </>
+                ) : validating ? 'Validation…' : (
+                  <>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                    Valider mon dossier
+                  </>
+                )}
+              </button>
+            </div>
+
+            {genError && <div className="dossier-pdf-error">⚠ {genError}</div>}
+            {!previewed && !dossierValidated && (
+              <div className="dossier-pdf-hint">
+                Prévisualisez d&apos;abord votre dossier pour activer la validation.
+              </div>
+            )}
+          </div>
         </main>
       </div>
     </>

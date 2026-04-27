@@ -148,3 +148,18 @@ export async function getDocumentSignedUrl(fichierPath: string): Promise<string 
     .createSignedUrl(fichierPath, 3600)
   return data?.signedUrl ?? null
 }
+
+export async function validateDossier(): Promise<{ error?: string; success?: boolean }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Non authentifié' }
+
+  const { error } = await supabase
+    .from('tenant_profiles')
+    .update({ dossier_statut: 'valide', updated_at: new Date().toISOString() })
+    .eq('user_id', user.id)
+
+  if (error) return { error: error.message }
+  revalidatePath('/locataire/dossier')
+  return { success: true }
+}

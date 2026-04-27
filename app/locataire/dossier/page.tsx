@@ -23,7 +23,7 @@ export default async function DossierPage() {
   let tenantProfile = null
   const { data: tp } = await supabase
     .from('tenant_profiles')
-    .select('prenom, nom, date_naissance, nationalite, telephone, adresse_actuelle, situation_pro, revenus_mensuels, type_revenus, loyer_cible')
+    .select('prenom, nom, date_naissance, nationalite, telephone, adresse_actuelle, situation_pro, revenus_mensuels, type_revenus, loyer_cible, dossier_statut')
     .eq('user_id', user.id)
     .single()
   if (tp) tenantProfile = tp
@@ -64,6 +64,7 @@ export default async function DossierPage() {
         initialProfile={tenantProfile}
         initialGarants={garants}
         initialDocuments={documents}
+        initialDossierValidated={(tenantProfile as { dossier_statut?: string } | null)?.dossier_statut === 'valide'}
       />
     </>
   )
