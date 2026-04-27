@@ -780,9 +780,9 @@ export default function DossierClient({ userId, initialProfile, initialGarants, 
                   onChange={e => updateProfile('revenus_mensuels', parseFloat(e.target.value) || null)}
                   placeholder="2 200"
                 />
-                {seuilRecommande !== null && (
+                {revenuLocataire > 0 && (
                   <p className="field-seuil-hint">
-                    Seuil recommandé : {seuilRecommande.toLocaleString('fr-FR')} €/mois ({multiplicateurSeuil}× le loyer)
+                    Loyer maximum recommandé : {Math.round(revenuLocataire / 3).toLocaleString('fr-FR')} €/mois
                   </p>
                 )}
               </div>
