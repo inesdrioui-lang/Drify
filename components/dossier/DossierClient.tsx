@@ -178,11 +178,12 @@ export default function DossierClient({ userId, initialProfile, initialGarants, 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // PDF generation state
-  const [generating, setGenerating]           = useState(false)
-  const [previewed, setPreviewed]             = useState(false)
-  const [validating, setValidating]           = useState(false)
+  const [generating, setGenerating]             = useState(false)
+  const [previewed, setPreviewed]               = useState(false)
+  const [pdfUrl, setPdfUrl]                     = useState<string | null>(null)
+  const [validating, setValidating]             = useState(false)
   const [dossierValidated, setDossierValidated] = useState(initialDossierValidated)
-  const [genError, setGenError]               = useState<string | null>(null)
+  const [genError, setGenError]                 = useState<string | null>(null)
 
   // Sub-fields for conditional situation fields (local state, not persisted yet)
   const [periodeEssai, setPeriodeEssai] = useState<'oui' | 'non' | ''>('')
@@ -220,7 +221,7 @@ export default function DossierClient({ userId, initialProfile, initialGarants, 
         return
       }
       if (data.url) {
-        window.open(data.url, '_blank', 'noopener,noreferrer')
+        setPdfUrl(data.url)
         setPreviewed(true)
       } else {
         setGenError(data.error ?? 'Erreur lors de la génération du PDF.')
@@ -1066,6 +1067,17 @@ export default function DossierClient({ userId, initialProfile, initialGarants, 
                 color: #4A7C59;
                 border-color: #4A7C59;
               }
+              .dossier-pdf-link {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                margin-top: 14px;
+                font-size: 13px;
+                font-weight: 600;
+                color: var(--brown);
+                text-decoration: underline;
+                text-underline-offset: 3px;
+              }
               .dossier-pdf-hint {
                 margin-top: 12px;
                 font-size: 11px;
@@ -1131,6 +1143,19 @@ export default function DossierClient({ userId, initialProfile, initialGarants, 
               </button>
             </div>
 
+            {pdfUrl && (
+              <a
+                href={pdfUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="dossier-pdf-link"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                </svg>
+                Ouvrir le PDF généré
+              </a>
+            )}
             {genError && <div className="dossier-pdf-error">⚠ {genError}</div>}
             {!previewed && !dossierValidated && (
               <div className="dossier-pdf-hint">
