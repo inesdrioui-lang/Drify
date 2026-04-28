@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { generateDossierPDF } from '@/lib/pdf/generate-pdf';
-import { DossierTemplateData, DOCUMENT_LABELS, DocumentType } from '@/lib/pdf/dossier-template';
+import { DossierTemplateData } from '@/lib/pdf/dossier-template';
 import { randomBytes } from 'crypto';
 
 export const maxDuration = 60; // Vercel function timeout
@@ -48,10 +48,9 @@ export async function POST(request: NextRequest) {
             .createSignedUrl(doc.storage_path, 3600);
           signedUrl = data?.signedUrl;
         }
-        const docType = doc.type as DocumentType;
         return {
-          type: docType,
-          label: DOCUMENT_LABELS[docType] ?? doc.label ?? 'Document',
+          type: doc.type as string,
+          label: (doc.label ?? 'Document') as string,
           statut: doc.statut as 'verifie' | 'non_fourni' | 'en_attente',
           url: signedUrl,
           mime_type: doc.mime_type,
@@ -76,7 +75,6 @@ export async function POST(request: NextRequest) {
         situation_professionnelle: profil.situation_professionnelle ?? '',
         revenus_mensuels_nets: profil.revenus_mensuels_nets ?? 0,
         nom_employeur: profil.nom_employeur,
-        date_entree_emploi: profil.date_entree_emploi,
       },
       dossier: {
         reference,
