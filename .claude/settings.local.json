@@ -38,7 +38,8 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code} → %{redirect_url}\" http://localhost:3000/dashboard)",
       "Bash(npm run *)",
       "Bash(ps -p 34892 -o pid,command)",
-      "Bash(kill 34892)"
+      "Bash(kill 34892)",
+      "Bash(npm install *)"
     ]
   }
 }
