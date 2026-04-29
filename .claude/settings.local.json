@@ -39,7 +39,8 @@
       "Bash(npm run *)",
       "Bash(ps -p 34892 -o pid,command)",
       "Bash(kill 34892)",
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "Bash(mdfind \"kMDItemCFBundleIdentifier == 'com.google.Chrome'\")"
     ]
   }
 }
