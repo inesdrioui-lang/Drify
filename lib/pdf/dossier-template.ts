@@ -51,70 +51,65 @@ export const DOCUMENT_LABELS: Record<DocumentType, string> = {
   autre: 'Document complémentaire',
 };
 
-function buildWatermarkItems(count: number): string {
-  return Array(count)
-    .fill(0)
-    .map(() => `<div class="wm-item">CONFIDENTIEL · DRIFY · USAGE LOCATIF EXCLUSIF · </div>`)
-    .join('');
+// ── Logo inline SVG (version crème pour fond sombre) ─────────────────────────
+const LOGO_LIGHT = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="180 375 700 250" width="88" height="28">
+  <path fill="#EDE0CF" d="M502.5,440.5C539.9,447.5 559.2,470 560.5,508C560.7,536.3 548,556.3 522.5,568C514.2,571 505.9,573.1 497.5,574.5L494.5,574.5C478.3,573.5 462,573.2 445.5,573.5L445.5,441.5C464.7,441.8 483.7,441.5 502.5,440.5Z"/>
+  <path fill="#D4B896" d="M534.5,500.5C536.2,520.4 528.9,535.7 512.5,546.5C506.2,548.6 499.8,550.2 493.5,551.5L470.5,551.5L470.5,462.5C480.2,462.3 489.9,462.8 499.5,464C519.6,468.1 531.3,480.3 534.5,500.5Z"/>
+  <path fill="#EDE0CF" d="M388.5,465.5C360.7,440.5 332.7,415.7 304.5,391C294,382 283,381.3 271.5,389C243.3,413.7 215.3,438.5 187.5,463.5C185.1,466.4 183.3,469.8 182,473.5C181.3,508.8 181.3,544.2 182,579.5C183.8,585.3 188,589.5 194.5,592L281.5,592.5C252.7,592.6 223.7,592.5 194.5,592C187.2,591.7 181.7,585.9 180,576.5C179.3,542.5 179.3,508.5 180,474.5C180.9,471.7 182.1,469 183.5,466.5L388.5,465.5Z"/>
+  <path fill="#EDE0CF" d="M652.5,479.5L674.5,479.5L674.5,572.5L652.5,572.5L652.5,479.5Z"/>
+  <path fill="#EDE0CF" d="M689.5,479.5L750.5,479.5L750.5,496.5L731.5,497.5L731.5,574.5L707.5,574.5L707.5,497.5L689.5,497.5ZM706.5,463.5C707.3,451.7 713.3,444.1 724.5,440.5C733.4,437.3 742.4,437.4 749.5,439.5C746.1,438 742.4,437.4 738.5,437.5C733.4,437.3 728.8,438.3 724.5,440.5C713.3,444.1 706.5,463.5 706.5,463.5Z"/>
+  <path fill="#EDE0CF" d="M576.5,478.5L601.5,477.5L601.5,479.5C601.3,484.8 601.5,490.2 602,495.5C609.5,483 620.2,477 634.5,477.5L634.5,500.5C609,503 601.2,515.5 602.5,515.5C601.2,554.8 601.5,574.5 601.5,574.5L576.5,573.5L576.5,478.5Z"/>
+  <path fill="#EDE0CF" d="M759.5,479.5L785.5,478.5L785.5,480.5C797.9,517.3 808.5,541.5 810,543.5C817.4,523 824.9,502.7 832.5,482.5C834,480.5 842.5,479.2 858.5,480C851.2,498 844.2,516.2 837.5,534.5C833.6,545.4 829.9,554 826.5,563.5C822.2,578.3 816.3,592 810,605.5C808.4,607.9 806.3,609.3 803.5,609.5L783.5,608.5C788.1,599.4 792.1,590 795.5,580.5C786.6,546.5 764.5,488.5 759.5,479.5Z"/>
+</svg>`;
+
+function buildWatermark(): string {
+  const item = `<span class="wm-item">CONFIDENTIEL · DRIFY · USAGE LOCATIF EXCLUSIF · </span>`;
+  return `<div class="watermark" aria-hidden="true"><div class="wm-inner">${Array(80).fill(item).join('')}</div></div>`;
 }
 
 function getInitials(prenom: string, nom: string): string {
   return `${prenom.charAt(0)}${nom.charAt(0)}`.toUpperCase();
 }
 
-function buildDocPages(data: DossierTemplateData): string {
-  const verifiedDocs = data.documents.filter((d) => d.statut === 'verifie' && d.url);
-  return verifiedDocs
-    .map(
-      (doc, index) => `
-  <div class="page doc-page">
-    <div class="watermark" aria-hidden="true">
-      <div class="wm-track">${buildWatermarkItems(80)}</div>
-    </div>
+function statusLabel(s: DossierDocument['statut']): string {
+  return s === 'verifie' ? 'Fourni' : s === 'non_fourni' ? 'Non fourni' : 'En attente';
+}
+function statusClass(s: DossierDocument['statut']): string {
+  return s === 'verifie' ? 'ok' : s === 'non_fourni' ? 'err' : 'warn';
+}
 
-    <header class="page-header">
-      <div class="header-brand">
-        <div class="header-logo-mark"></div>
-        <span class="header-brand-name">Drify</span>
-      </div>
-      <div class="header-center">
-        <span class="header-doc-type">${doc.label}</span>
-      </div>
-      <div class="header-right">
-        <div class="header-candidate">${data.candidat.prenom} ${data.candidat.nom.toUpperCase()}</div>
-        <div class="header-ref">Réf. ${data.dossier.reference}</div>
+function buildDocPages(data: DossierTemplateData): string {
+  return data.documents
+    .filter((d) => d.statut === 'verifie' && d.url)
+    .map(
+      (doc, i) => `
+  <div class="page">
+    ${buildWatermark()}
+    <header class="ph">
+      <div class="ph-brand">${LOGO_LIGHT}</div>
+      <div class="ph-center">${doc.label}</div>
+      <div class="ph-right">
+        <div class="ph-name">${data.candidat.prenom} ${data.candidat.nom.toUpperCase()}</div>
+        <div class="ph-ref">Réf. ${data.dossier.reference}</div>
       </div>
     </header>
-
-    <div class="doc-strip">
-      <span class="strip-label">${doc.label.toUpperCase()}</span>
-      <span class="strip-mention">Document exclusif — location immobilière — Drify</span>
+    <div class="ribbon">
+      <span class="ribbon-l">${doc.label.toUpperCase()}</span>
+      <span class="ribbon-r">Document exclusif location immobilière — Drify</span>
     </div>
-
-    <div class="doc-content">
-      ${
-        doc.mime_type?.startsWith('image/')
-          ? `<img class="doc-image" src="${doc.url}" alt="${doc.label}" />`
-          : `<div class="doc-embed-placeholder">
-               <div class="placeholder-icon">
-                 <svg width="32" height="40" viewBox="0 0 32 40" fill="none">
-                   <rect x="1" y="1" width="30" height="38" rx="3" stroke="#D4B896" stroke-width="1.5"/>
-                   <path d="M8 14h16M8 20h16M8 26h10" stroke="#D4B896" stroke-width="1.5" stroke-linecap="round"/>
-                   <path d="M20 1v8h11" stroke="#D4B896" stroke-width="1.5" stroke-linejoin="round"/>
-                 </svg>
-               </div>
-               <div class="placeholder-label">${doc.label}</div>
-               <div class="placeholder-sub">Document PDF — voir fichier joint</div>
-             </div>`
+    <div class="doc-area">
+      ${doc.mime_type?.startsWith('image/')
+        ? `<img class="doc-img" src="${doc.url}" alt="${doc.label}" />`
+        : `<div class="doc-ph">
+             <svg width="36" height="44" viewBox="0 0 36 44" fill="none"><rect x="1" y="1" width="34" height="42" rx="3" stroke="#D4B896" stroke-width="1.5"/><path d="M9 16h18M9 22h18M9 28h11" stroke="#D4B896" stroke-width="1.5" stroke-linecap="round"/><path d="M22 1v10h13" stroke="#D4B896" stroke-width="1.5" stroke-linejoin="round"/></svg>
+             <div class="doc-ph-label">${doc.label}</div>
+             <div class="doc-ph-sub">Document PDF — voir fichier joint</div>
+           </div>`
       }
     </div>
-
-    <footer class="page-footer">
-      <div class="footer-legal">
-        Drify · Dossier de location numérique · Généré le ${data.dossier.date_generation}<br>
-        Document confidentiel soumis au RGPD · Conservation max. 3 ans · privacy@drify.fr
-      </div>
-      <div class="footer-page-num">${index + 2}</div>
+    <footer class="pf">
+      <div class="pf-l">Drify · Dossier de location numérique · ${data.dossier.date_generation}<br>Document confidentiel · RGPD · Conservation max. 3 ans · privacy@drify.fr</div>
+      <div class="pf-n">${i + 2}</div>
     </footer>
   </div>`
     )
@@ -123,892 +118,270 @@ function buildDocPages(data: DossierTemplateData): string {
 
 export function generateDossierHTML(data: DossierTemplateData): string {
   const verifiedDocs = data.documents.filter((d) => d.statut === 'verifie' && d.url);
-  const verifiedCount = verifiedDocs.length;
-  const lastPageNum = verifiedCount + 2;
+  const lastPage = verifiedDocs.length + 2;
   const initials = getInitials(data.candidat.prenom, data.candidat.nom);
-
-  const loyer_max = data.candidat.revenus_mensuels_nets / 3;
-  const tauxEffort = data.dossier.taux_effort ?? null;
+  const loyerMax = Math.round(data.candidat.revenus_mensuels_nets / 3);
   const score = data.dossier.score_confiance ?? null;
+  const taux = data.dossier.taux_effort ?? null;
 
   return `<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dossier de location — ${data.candidat.prenom} ${data.candidat.nom}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    :root{
+      --bd:#3B2314;--b:#6B3F26;--bl:#A0673A;
+      --beg:#EDE0CF;--begl:#F7F2EA;--begd:#D4B896;
+      --w:#FFFFFF;--ink:#1A0F08;--ink2:#5A4035;
+      --ok:#2E6644;--err:#7D2416;--warn:#7A5010;
+    }
+    body{font-family:'DM Sans',sans-serif;font-size:10px;color:var(--ink);background:white;width:210mm}
 
-    :root {
-      --bd:  #3B2314;
-      --b:   #6B3F26;
-      --bl:  #A0673A;
-      --beg: #EDE0CF;
-      --begl:#F7F2EA;
-      --begd:#D4B896;
-      --w:   #FFFFFF;
-      --ink: #1A0F08;
-      --ink2:#5A4A3A;
-      --ok:  #3A6647;
-      --err: #8B2E20;
-      --warn:#8B6020;
-    }
+    /* PAGE */
+    .page{width:210mm;min-height:297mm;position:relative;page-break-after:always;overflow:hidden;background:white}
+    @media print{.page{page-break-after:always}}
 
-    body {
-      font-family: 'DM Sans', sans-serif;
-      font-size: 10px;
-      color: var(--ink);
-      background: white;
-      width: 210mm;
-    }
+    /* WATERMARK */
+    .watermark{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:1}
+    .wm-inner{position:absolute;top:-50%;left:-20%;width:160%;height:220%;transform:rotate(-32deg);display:flex;flex-wrap:wrap;align-content:flex-start;gap:22px 0}
+    .wm-item{font-size:8px;font-weight:600;letter-spacing:3px;color:rgba(59,35,20,0.038);white-space:nowrap;padding-right:24px}
 
-    .page {
-      width: 210mm;
-      min-height: 297mm;
-      position: relative;
-      page-break-after: always;
-      overflow: hidden;
-      background: white;
-    }
+    /* PAGE HEADER */
+    .ph{background:var(--bd);padding:5mm 12mm;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:10;gap:4mm}
+    .ph-brand{flex-shrink:0;display:flex;align-items:center}
+    .ph-center{flex:1;text-align:center;font-size:8px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--begd)}
+    .ph-right{text-align:right;flex-shrink:0}
+    .ph-name{font-size:8.5px;font-weight:600;color:var(--beg)}
+    .ph-ref{font-size:6.5px;color:var(--begd);margin-top:1px;font-family:monospace}
 
-    @media print {
-      .page { page-break-after: always; }
-    }
+    /* RIBBON */
+    .ribbon{background:var(--begl);border-bottom:1px solid var(--begd);padding:2.5mm 12mm;display:flex;justify-content:space-between;align-items:center;position:relative;z-index:10}
+    .ribbon-l{font-size:6.5px;font-weight:700;letter-spacing:2px;color:var(--b)}
+    .ribbon-r{font-size:7px;color:var(--ink2);font-style:italic}
 
-    /* ── WATERMARK ─────────────────────────────── */
-    .watermark {
-      position: absolute;
-      inset: 0;
-      overflow: hidden;
-      pointer-events: none;
-      z-index: 1;
-    }
-    .wm-track {
-      position: absolute;
-      top: -60%;
-      left: -20%;
-      width: 160%;
-      height: 220%;
-      transform: rotate(-35deg);
-      display: flex;
-      flex-direction: column;
-      gap: 22px;
-    }
-    .wm-item {
-      font-family: 'DM Sans', sans-serif;
-      font-size: 8.5px;
-      font-weight: 600;
-      letter-spacing: 3px;
-      color: rgba(59, 35, 20, 0.042);
-      white-space: nowrap;
-    }
+    /* DOC AREA */
+    .doc-area{position:relative;z-index:5;display:flex;align-items:center;justify-content:center;padding:8mm 12mm;min-height:228mm}
+    .doc-img{max-width:100%;max-height:220mm;object-fit:contain;border-radius:2px;border:0.5px solid var(--begd)}
+    .doc-ph{width:100%;height:195mm;background:var(--begl);border:1px dashed var(--begd);border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px}
+    .doc-ph-label{font-size:10px;font-weight:500;color:var(--ink2)}
+    .doc-ph-sub{font-size:8px;color:var(--begd)}
 
-    /* ── SHARED PAGE HEADER ────────────────────── */
-    .page-header {
-      background: var(--bd);
-      padding: 5.5mm 12mm;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      position: relative;
-      z-index: 10;
-    }
-    .header-brand {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-    }
-    .header-logo-mark {
-      width: 20px;
-      height: 20px;
-      border: 1.5px solid rgba(237,224,207,0.6);
-      border-radius: 4px;
-      position: relative;
-    }
-    .header-logo-mark::after {
-      content: '';
-      position: absolute;
-      inset: 3px;
-      background: rgba(237,224,207,0.5);
-      border-radius: 2px;
-    }
-    .header-brand-name {
-      font-family: 'Playfair Display', serif;
-      font-size: 15px;
-      color: var(--w);
-      letter-spacing: 0.5px;
-    }
-    .header-center {
-      flex: 1;
-      text-align: center;
-    }
-    .header-doc-type {
-      font-size: 8px;
-      font-weight: 600;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: var(--begd);
-    }
-    .header-right {
-      text-align: right;
-    }
-    .header-candidate {
-      font-size: 8.5px;
-      font-weight: 600;
-      color: var(--beg);
-      letter-spacing: 0.3px;
-    }
-    .header-ref {
-      font-size: 7px;
-      color: var(--begd);
-      margin-top: 1px;
-      font-family: monospace;
-      letter-spacing: 0.5px;
-    }
+    /* PAGE FOOTER */
+    .pf{background:var(--begl);border-top:0.5px solid var(--begd);padding:3mm 12mm;display:flex;justify-content:space-between;align-items:center;position:absolute;bottom:0;left:0;right:0;z-index:10}
+    .pf-l{font-size:6.5px;color:var(--ink2);line-height:1.6}
+    .pf-n{font-family:'Playfair Display',serif;font-size:13px;color:var(--bl)}
 
-    /* ── DOC STRIP ─────────────────────────────── */
-    .doc-strip {
-      background: var(--begl);
-      border-bottom: 1px solid var(--begd);
-      padding: 2.5mm 12mm;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      position: relative;
-      z-index: 10;
-    }
-    .strip-label {
-      font-size: 7px;
-      font-weight: 700;
-      letter-spacing: 2px;
-      color: var(--b);
-    }
-    .strip-mention {
-      font-size: 7px;
-      color: var(--ink2);
-      font-style: italic;
-    }
+    /* HERO */
+    .hero{background:var(--bd);position:relative;overflow:hidden;padding-bottom:8mm}
+    .hero::before{content:'';position:absolute;right:-24mm;top:-24mm;width:90mm;height:90mm;border-radius:50%;border:1px solid rgba(237,224,207,0.07)}
+    .hero::after{content:'';position:absolute;right:-10mm;top:-10mm;width:60mm;height:60mm;border-radius:50%;border:1px solid rgba(237,224,207,0.05)}
+    .hero-bar{padding:6mm 14mm 0;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2}
+    .hero-date{font-size:7.5px;color:var(--begd);letter-spacing:0.5px}
+    .hero-eyebrow{padding:5mm 14mm 0;font-size:7px;font-weight:600;letter-spacing:3.5px;text-transform:uppercase;color:var(--begd);position:relative;z-index:2}
+    .hero-rule{margin:3.5mm 14mm;height:0.5px;background:rgba(212,184,150,0.18)}
+    .hero-candidate{padding:0 14mm;display:flex;align-items:center;gap:5mm;position:relative;z-index:2}
+    .hero-avatar{width:13mm;height:13mm;border-radius:50%;background:rgba(160,103,58,0.35);border:1.5px solid rgba(237,224,207,0.25);display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:12px;color:var(--beg);flex-shrink:0}
+    .hero-name{font-family:'Playfair Display',serif;font-size:23px;color:var(--w);letter-spacing:0.3px;line-height:1.1}
+    .hero-job{font-size:9px;color:var(--begd);margin-top:1.5mm}
+    .score-pill{margin:5mm 14mm 0;display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,0.06);border:0.5px solid rgba(237,224,207,0.2);border-radius:2px;padding:1.5mm 3mm;position:relative;z-index:2}
+    .score-pill-label{font-size:6.5px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--begd)}
+    .score-sep{width:0.5px;height:9px;background:rgba(212,184,150,0.3)}
+    .score-val{font-family:'Playfair Display',serif;font-size:12px;color:var(--w)}
+    .score-max{font-size:7px;color:var(--begd)}
 
-    /* ── DOC CONTENT ───────────────────────────── */
-    .doc-content {
-      position: relative;
-      z-index: 5;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 8mm 12mm;
-      min-height: 230mm;
-    }
-    .doc-image {
-      max-width: 100%;
-      max-height: 220mm;
-      object-fit: contain;
-      border-radius: 2px;
-      border: 0.5px solid var(--begd);
-    }
-    .doc-embed-placeholder {
-      width: 100%;
-      height: 200mm;
-      background: var(--begl);
-      border: 1px dashed var(--begd);
-      border-radius: 4px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-    }
-    .placeholder-label {
-      font-size: 10px;
-      font-weight: 600;
-      color: var(--ink2);
-    }
-    .placeholder-sub {
-      font-size: 8px;
-      color: var(--begd);
-    }
+    /* COVER BODY */
+    .cover-body{padding:5mm 14mm 18mm}
 
-    /* ── SHARED PAGE FOOTER ────────────────────── */
-    .page-footer {
-      background: var(--begl);
-      border-top: 0.5px solid var(--begd);
-      padding: 3mm 12mm;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      z-index: 10;
-    }
-    .footer-legal {
-      font-size: 6.5px;
-      color: var(--ink2);
-      line-height: 1.6;
-    }
-    .footer-page-num {
-      font-family: 'Playfair Display', serif;
-      font-size: 12px;
-      color: var(--bl);
-    }
+    /* INFO GRID */
+    .ig{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--begd);border-radius:3px;overflow:hidden;margin-bottom:5mm;margin-top:4mm}
+    .ig-cell{padding:3.5mm 5mm;background:var(--begl);border-right:0.5px solid var(--begd);border-bottom:0.5px solid var(--begd)}
+    .ig-cell:nth-child(2n){border-right:none}
+    .ig-cell:nth-last-child(-n+2){border-bottom:none}
+    .ig-wide{grid-column:span 2;border-right:none}
+    .ig-label{font-size:6.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--bl);margin-bottom:1.5mm}
+    .ig-value{font-family:'Playfair Display',serif;font-size:13px;color:var(--bd)}
+    .ig-value-sm{font-size:9px;font-weight:500;color:var(--ink);line-height:1.4}
+    .ig-sub{font-size:7px;color:var(--ink2);margin-top:1mm}
+    .effort-bar{height:3px;background:var(--begd);border-radius:2px;margin-top:2mm;overflow:hidden}
+    .effort-fill{height:100%;background:var(--b);border-radius:2px}
+    .effort-legend{display:flex;justify-content:space-between;margin-top:1mm;font-size:6px;color:var(--ink2)}
 
-    /* ══════════════════════════════════════════
-       PAGE DE COUVERTURE
-    ══════════════════════════════════════════ */
-    .cover-hero {
-      background: var(--bd);
-      padding: 0;
-      position: relative;
-      overflow: hidden;
-      min-height: 98mm;
-    }
+    /* SECTION TITLE */
+    .st{font-size:7px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--b);margin-bottom:3mm;display:flex;align-items:center;gap:3mm}
+    .st::after{content:'';flex:1;height:0.5px;background:var(--begd)}
 
-    /* Cercles décoratifs */
-    .cover-hero::before {
-      content: '';
-      position: absolute;
-      right: -18mm;
-      top: -18mm;
-      width: 70mm;
-      height: 70mm;
-      border-radius: 50%;
-      border: 1px solid rgba(237,224,207,0.08);
-    }
-    .cover-hero::after {
-      content: '';
-      position: absolute;
-      right: -8mm;
-      top: -8mm;
-      width: 48mm;
-      height: 48mm;
-      border-radius: 50%;
-      border: 1px solid rgba(237,224,207,0.06);
-    }
+    /* DOCS TABLE */
+    .dt{width:100%;border:1px solid var(--begd);border-radius:3px;overflow:hidden;margin-bottom:5mm}
+    .dt-head{background:var(--bd);display:flex;padding:2.5mm 5mm}
+    .dt-h1{flex:1;font-size:6.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--begd)}
+    .dt-h2{font-size:6.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--begd)}
+    .dt-row{display:flex;align-items:center;justify-content:space-between;padding:2.8mm 5mm;border-top:0.5px solid var(--beg);background:var(--begl)}
+    .dt-row:nth-child(even){background:var(--w)}
+    .dt-left{display:flex;align-items:center;gap:2.5mm}
+    .dt-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+    .dt-dot.ok{background:var(--ok)}.dt-dot.err{background:var(--err)}.dt-dot.warn{background:var(--warn)}
+    .dt-name{font-size:8.5px;font-weight:500;color:var(--ink)}
+    .dt-badge{font-size:7px;font-weight:700;padding:1mm 2.5mm;border-radius:2px;letter-spacing:0.3px}
+    .dt-badge.ok{background:rgba(46,102,68,0.1);color:var(--ok);border:0.5px solid rgba(46,102,68,0.2)}
+    .dt-badge.err{background:rgba(125,36,22,0.08);color:var(--err);border:0.5px solid rgba(125,36,22,0.2)}
+    .dt-badge.warn{background:rgba(122,80,16,0.08);color:var(--warn);border:0.5px solid rgba(122,80,16,0.2)}
 
-    .hero-top-bar {
-      padding: 6mm 14mm 0;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .hero-brand {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .hero-logo-mark {
-      width: 26px;
-      height: 26px;
-      border: 1.5px solid rgba(237,224,207,0.4);
-      border-radius: 5px;
-      position: relative;
-    }
-    .hero-logo-mark::after {
-      content: '';
-      position: absolute;
-      inset: 4px;
-      background: rgba(237,224,207,0.35);
-      border-radius: 2px;
-    }
-    .hero-brand-name {
-      font-family: 'Playfair Display', serif;
-      font-size: 20px;
-      color: var(--w);
-      letter-spacing: 1px;
-    }
-    .hero-date {
-      font-size: 7.5px;
-      color: var(--begd);
-      letter-spacing: 0.5px;
-    }
+    /* RGPD */
+    .rgpd{background:var(--begl);border:1px solid var(--begd);border-left:2px solid var(--b);border-radius:2px;padding:3mm 4mm}
+    .rgpd-t{font-size:7px;font-weight:700;color:var(--b);margin-bottom:1.5mm}
+    .rgpd-txt{font-size:7px;color:var(--ink2);line-height:1.65}
 
-    .hero-label {
-      padding: 5mm 14mm 0;
-      font-size: 7.5px;
-      font-weight: 600;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      color: var(--begd);
-    }
-
-    .hero-divider {
-      height: 0.5px;
-      background: rgba(212,184,150,0.2);
-      margin: 4mm 14mm;
-    }
-
-    .hero-candidate-block {
-      padding: 0 14mm 6mm;
-      display: flex;
-      align-items: flex-end;
-      gap: 5mm;
-    }
-    .hero-avatar {
-      width: 14mm;
-      height: 14mm;
-      border-radius: 50%;
-      background: var(--b);
-      border: 1.5px solid rgba(237,224,207,0.3);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: 'Playfair Display', serif;
-      font-size: 13px;
-      color: var(--beg);
-      flex-shrink: 0;
-      margin-bottom: 1mm;
-    }
-    .hero-candidate-info {}
-    .hero-candidate-name {
-      font-family: 'Playfair Display', serif;
-      font-size: 24px;
-      color: var(--w);
-      letter-spacing: 0.3px;
-      line-height: 1.1;
-    }
-    .hero-candidate-job {
-      font-size: 9.5px;
-      color: var(--begd);
-      margin-top: 1.5mm;
-      font-weight: 400;
-    }
-
-    /* ── COVER BODY ────────────────────────────── */
-    .cover-body {
-      padding: 6mm 14mm 18mm;
-    }
-
-    /* Score badge */
-    .score-row {
-      display: flex;
-      align-items: center;
-      gap: 3mm;
-      margin-bottom: 5mm;
-    }
-    .score-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      background: var(--bd);
-      border: 1px solid var(--b);
-      border-radius: 2px;
-      padding: 1.5mm 3.5mm;
-    }
-    .score-pill-label {
-      font-size: 7px;
-      font-weight: 600;
-      letter-spacing: 1px;
-      color: var(--beg);
-      text-transform: uppercase;
-    }
-    .score-pill-sep {
-      width: 0.5px;
-      height: 10px;
-      background: var(--b);
-    }
-    .score-pill-value {
-      font-family: 'Playfair Display', serif;
-      font-size: 13px;
-      color: var(--w);
-    }
-    .score-pill-max {
-      font-size: 7.5px;
-      color: var(--begd);
-    }
-
-    /* Info grid */
-    .cover-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0;
-      border: 1px solid var(--begd);
-      border-radius: 3px;
-      overflow: hidden;
-      margin-bottom: 5mm;
-    }
-    .grid-cell {
-      padding: 3.5mm 5mm;
-      border-right: 0.5px solid var(--begd);
-      border-bottom: 0.5px solid var(--begd);
-      background: var(--begl);
-    }
-    .grid-cell:nth-child(2n) { border-right: none; }
-    .grid-cell:nth-last-child(-n+2) { border-bottom: none; }
-    .grid-cell-wide {
-      grid-column: span 2;
-      border-right: none;
-    }
-    .cell-label {
-      font-size: 6.5px;
-      font-weight: 700;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      color: var(--bl);
-      margin-bottom: 1.5mm;
-    }
-    .cell-value {
-      font-family: 'Playfair Display', serif;
-      font-size: 13px;
-      color: var(--bd);
-      line-height: 1.2;
-    }
-    .cell-value-sm {
-      font-size: 9px;
-      font-weight: 500;
-      color: var(--ink);
-      line-height: 1.4;
-    }
-
-    /* Taux d'effort bar */
-    .effort-bar-wrap {
-      margin-top: 2mm;
-    }
-    .effort-bar-track {
-      height: 3px;
-      background: var(--begd);
-      border-radius: 2px;
-      overflow: hidden;
-      margin-top: 1mm;
-    }
-    .effort-bar-fill {
-      height: 100%;
-      background: var(--b);
-      border-radius: 2px;
-    }
-    .effort-bar-legend {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 1mm;
-      font-size: 6px;
-      color: var(--ink2);
-    }
-
-    /* Revenus highlight */
-    .revenus-big {
-      font-family: 'Playfair Display', serif;
-      font-size: 18px;
-      color: var(--bd);
-    }
-    .revenus-sub {
-      font-size: 7px;
-      color: var(--ink2);
-      margin-top: 0.5mm;
-    }
-
-    /* Séparateur de section */
-    .section-sep {
-      height: 0.5px;
-      background: var(--begd);
-      margin: 4mm 0;
-    }
-
-    /* Titre de section */
-    .section-title {
-      font-size: 7px;
-      font-weight: 700;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: var(--b);
-      margin-bottom: 3mm;
-      display: flex;
-      align-items: center;
-      gap: 2mm;
-    }
-    .section-title::after {
-      content: '';
-      flex: 1;
-      height: 0.5px;
-      background: var(--begd);
-    }
-
-    /* Documents list */
-    .docs-table {
-      width: 100%;
-      border: 1px solid var(--begd);
-      border-radius: 3px;
-      overflow: hidden;
-      margin-bottom: 5mm;
-    }
-    .docs-table-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 2.8mm 4.5mm;
-      border-bottom: 0.5px solid var(--beg);
-      background: var(--begl);
-    }
-    .docs-table-row:last-child { border-bottom: none; }
-    .docs-table-row:nth-child(even) { background: var(--w); }
-    .doc-row-left {
-      display: flex;
-      align-items: center;
-      gap: 2.5mm;
-    }
-    .doc-status-dot {
-      width: 5px;
-      height: 5px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-    .dot-ok   { background: var(--ok); }
-    .dot-err  { background: var(--err); }
-    .dot-warn { background: var(--warn); }
-    .doc-row-name {
-      font-size: 8.5px;
-      font-weight: 500;
-      color: var(--ink);
-    }
-    .doc-row-badge {
-      font-size: 7px;
-      font-weight: 700;
-      padding: 1mm 2.5mm;
-      border-radius: 1.5px;
-      letter-spacing: 0.5px;
-    }
-    .badge-ok   { background: rgba(58,102,71,0.1);  color: var(--ok);   border: 0.5px solid rgba(58,102,71,0.25); }
-    .badge-err  { background: rgba(139,46,32,0.08); color: var(--err);  border: 0.5px solid rgba(139,46,32,0.2); }
-    .badge-warn { background: rgba(139,96,32,0.08); color: var(--warn); border: 0.5px solid rgba(139,96,32,0.2); }
-
-    /* Mentions RGPD */
-    .rgpd-box {
-      background: var(--begl);
-      border: 1px solid var(--begd);
-      border-left: 2.5px solid var(--b);
-      border-radius: 2px;
-      padding: 3.5mm 4.5mm;
-    }
-    .rgpd-title {
-      font-size: 7px;
-      font-weight: 700;
-      color: var(--b);
-      margin-bottom: 1.5mm;
-      letter-spacing: 0.5px;
-    }
-    .rgpd-text {
-      font-size: 7px;
-      color: var(--ink2);
-      line-height: 1.65;
-    }
-
-    /* ══════════════════════════════════════════
-       PAGE MENTIONS LÉGALES
-    ══════════════════════════════════════════ */
-    .legal-page { background: var(--begl); }
-
-    .legal-body {
-      padding: 7mm 14mm 20mm;
-      position: relative;
-      z-index: 5;
-    }
-
-    .legal-intro {
-      font-size: 8.5px;
-      color: var(--ink2);
-      line-height: 1.7;
-      margin-bottom: 5mm;
-      padding-bottom: 4mm;
-      border-bottom: 0.5px solid var(--begd);
-    }
-
-    .legal-articles {
-      display: flex;
-      flex-direction: column;
-      gap: 4mm;
-    }
-
-    .legal-article {
-      padding: 3.5mm 4.5mm;
-      background: var(--w);
-      border-radius: 2px;
-      border: 0.5px solid var(--begd);
-    }
-    .legal-article-num {
-      font-size: 6.5px;
-      font-weight: 700;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      color: var(--bl);
-      margin-bottom: 1mm;
-    }
-    .legal-article-title {
-      font-family: 'Playfair Display', serif;
-      font-size: 10px;
-      color: var(--bd);
-      margin-bottom: 2mm;
-    }
-    .legal-article-text {
-      font-size: 7.5px;
-      color: var(--ink2);
-      line-height: 1.7;
-    }
-    .legal-article-text strong {
-      color: var(--ink);
-      font-weight: 600;
-    }
-
-    .legal-auth {
-      margin-top: 6mm;
-      background: var(--bd);
-      border-radius: 3px;
-      padding: 5mm 6mm;
-      text-align: center;
-    }
-    .legal-auth-title {
-      font-family: 'Playfair Display', serif;
-      font-size: 11px;
-      color: var(--beg);
-      margin-bottom: 2mm;
-    }
-    .legal-auth-text {
-      font-size: 7.5px;
-      color: var(--begd);
-      line-height: 1.6;
-      margin-bottom: 3mm;
-    }
-    .legal-auth-ref {
-      font-family: monospace;
-      font-size: 8px;
-      color: var(--beg);
-      letter-spacing: 1.5px;
-      background: rgba(255,255,255,0.06);
-      display: inline-block;
-      padding: 1.5mm 3mm;
-      border-radius: 2px;
-      border: 0.5px solid rgba(237,224,207,0.2);
-    }
+    /* LEGAL */
+    .legal-body{padding:7mm 14mm 20mm;position:relative;z-index:5}
+    .legal-intro{font-size:8px;color:var(--ink2);line-height:1.7;margin-bottom:5mm;padding-bottom:4mm;border-bottom:0.5px solid var(--begd)}
+    .legal-grid{display:grid;grid-template-columns:1fr 1fr;gap:3mm;margin-bottom:5mm}
+    .la{background:var(--begl);border:0.5px solid var(--begd);border-radius:2px;padding:3mm 4mm}
+    .la.wide{grid-column:span 2}
+    .la-num{font-size:6px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--bl);margin-bottom:1mm}
+    .la-title{font-family:'Playfair Display',serif;font-size:9px;color:var(--bd);margin-bottom:1.5mm}
+    .la-text{font-size:7px;color:var(--ink2);line-height:1.65}
+    .la-text strong{color:var(--ink);font-weight:600}
+    .legal-auth{background:var(--bd);border-radius:3px;padding:5mm 6mm;text-align:center}
+    .lauth-title{font-family:'Playfair Display',serif;font-size:11px;color:var(--beg);margin-bottom:2mm}
+    .lauth-text{font-size:7.5px;color:var(--begd);line-height:1.6;margin-bottom:3mm}
+    .lauth-ref{font-family:monospace;font-size:8px;color:var(--beg);letter-spacing:1.5px;background:rgba(255,255,255,0.07);display:inline-block;padding:1.5mm 3mm;border-radius:2px;border:0.5px solid rgba(237,224,207,0.2)}
   </style>
 </head>
 <body>
 
-  <!-- ══════════════════════════════════════
-       PAGE 1 — COUVERTURE
-  ══════════════════════════════════════ -->
-  <div class="page">
-
-    <div class="cover-hero">
-      <div class="hero-top-bar">
-        <div class="hero-brand">
-          <div class="hero-logo-mark"></div>
-          <span class="hero-brand-name">Drify</span>
-        </div>
-        <div class="hero-date">Généré le ${data.dossier.date_generation}</div>
-      </div>
-
-      <div class="hero-label">Dossier de location numérique</div>
-      <div class="hero-divider"></div>
-
-      <div class="hero-candidate-block">
-        <div class="hero-avatar">${initials}</div>
-        <div class="hero-candidate-info">
-          <div class="hero-candidate-name">${data.candidat.prenom} ${data.candidat.nom.toUpperCase()}</div>
-          <div class="hero-candidate-job">${data.candidat.situation_professionnelle}</div>
-        </div>
+<!-- ══ PAGE 1 — COUVERTURE ════════════════════════ -->
+<div class="page">
+  <div class="hero">
+    <div class="hero-bar">
+      <div>${LOGO_LIGHT}</div>
+      <div class="hero-date">Généré le ${data.dossier.date_generation}</div>
+    </div>
+    <div class="hero-eyebrow">Dossier de location numérique</div>
+    <div class="hero-rule"></div>
+    <div class="hero-candidate">
+      <div class="hero-avatar">${initials}</div>
+      <div>
+        <div class="hero-name">${data.candidat.prenom} ${data.candidat.nom.toUpperCase()}</div>
+        <div class="hero-job">${data.candidat.situation_professionnelle}</div>
       </div>
     </div>
+    ${score ? `<div class="score-pill"><span class="score-pill-label">Score Drify</span><div class="score-sep"></div><span class="score-val">${score}</span><span class="score-max">/100</span></div>` : ''}
+  </div>
 
-    <div class="cover-body">
-
-      ${
-        score
-          ? `<div class="score-row">
-          <div class="score-pill">
-            <span class="score-pill-label">Score Drify</span>
-            <div class="score-pill-sep"></div>
-            <span class="score-pill-value">${score}</span>
-            <span class="score-pill-max">/100</span>
-          </div>
-        </div>`
-          : ''
-      }
-
-      <div class="cover-grid">
-        <div class="grid-cell">
-          <div class="cell-label">Revenus mensuels nets</div>
-          <div class="revenus-big">${data.candidat.revenus_mensuels_nets.toLocaleString('fr-FR')} €</div>
-          <div class="revenus-sub">Loyer recommandé ≤ ${loyer_max.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €</div>
-        </div>
-
-        ${
-          tauxEffort
-            ? `<div class="grid-cell">
-          <div class="cell-label">Taux d'effort</div>
-          <div class="cell-value">${tauxEffort} %</div>
-          <div class="effort-bar-wrap">
-            <div class="effort-bar-track">
-              <div class="effort-bar-fill" style="width:${Math.min(tauxEffort * 3, 100)}%"></div>
-            </div>
-            <div class="effort-bar-legend"><span>0 %</span><span>33 % max</span></div>
-          </div>
-        </div>`
-            : `<div class="grid-cell">
-          <div class="cell-label">Téléphone</div>
-          <div class="cell-value-sm">${data.candidat.telephone}</div>
-        </div>`
-        }
-
-        <div class="grid-cell">
-          <div class="cell-label">Adresse actuelle</div>
-          <div class="cell-value-sm">${data.candidat.adresse_actuelle}</div>
-        </div>
-
-        <div class="grid-cell">
-          <div class="cell-label">Email</div>
-          <div class="cell-value-sm">${data.candidat.email}</div>
-        </div>
-
-        ${
-          data.candidat.nom_employeur
-            ? `<div class="grid-cell grid-cell-wide">
-          <div class="cell-label">Employeur</div>
-          <div class="cell-value-sm">${data.candidat.nom_employeur}${data.candidat.date_entree_emploi ? ` · Depuis le ${data.candidat.date_entree_emploi}` : ''}</div>
-        </div>`
-            : ''
-        }
+  <div class="cover-body">
+    <div class="ig">
+      <div class="ig-cell">
+        <div class="ig-label">Revenus mensuels nets</div>
+        <div class="ig-value">${data.candidat.revenus_mensuels_nets.toLocaleString('fr-FR')} €</div>
+        <div class="ig-sub">Loyer recommandé ≤ ${loyerMax.toLocaleString('fr-FR')} €</div>
       </div>
-
-      <div class="section-sep"></div>
-      <div class="section-title">Documents inclus</div>
-
-      <div class="docs-table">
-        ${data.documents
-          .map(
-            (doc) => `
-        <div class="docs-table-row">
-          <div class="doc-row-left">
-            <div class="doc-status-dot ${doc.statut === 'verifie' ? 'dot-ok' : doc.statut === 'non_fourni' ? 'dot-err' : 'dot-warn'}"></div>
-            <span class="doc-row-name">${doc.label}</span>
-          </div>
-          <span class="doc-row-badge ${doc.statut === 'verifie' ? 'badge-ok' : doc.statut === 'non_fourni' ? 'badge-err' : 'badge-warn'}">
-            ${doc.statut === 'verifie' ? 'Vérifié' : doc.statut === 'non_fourni' ? 'Non fourni' : 'En attente'}
-          </span>
-        </div>`
-          )
-          .join('')}
+      ${taux ? `
+      <div class="ig-cell">
+        <div class="ig-label">Taux d'effort estimé</div>
+        <div class="ig-value">${taux} %</div>
+        <div class="effort-bar"><div class="effort-fill" style="width:${Math.min(taux * 3, 100)}%"></div></div>
+        <div class="effort-legend"><span>0 %</span><span>33 % max</span></div>
+      </div>` : `
+      <div class="ig-cell">
+        <div class="ig-label">Téléphone</div>
+        <div class="ig-value-sm">${data.candidat.telephone}</div>
+      </div>`}
+      <div class="ig-cell">
+        <div class="ig-label">Adresse actuelle</div>
+        <div class="ig-value-sm">${data.candidat.adresse_actuelle}</div>
       </div>
-
-      <div class="rgpd-box">
-        <div class="rgpd-title">Confidentialité &amp; Protection des données</div>
-        <div class="rgpd-text">
-          Ce dossier a été généré par Drify (drify.vercel.app) et est destiné exclusivement à la recherche d'un logement.
-          Protégé par le RGPD (Règl. UE 2016/679). Toute autre utilisation est interdite.
-          Durée de conservation : 3 ans max. DPO : privacy@drify.fr · CNIL : cnil.fr
-        </div>
+      <div class="ig-cell">
+        <div class="ig-label">Email</div>
+        <div class="ig-value-sm">${data.candidat.email}</div>
       </div>
+      ${data.candidat.nom_employeur ? `
+      <div class="ig-cell ig-wide">
+        <div class="ig-label">Employeur</div>
+        <div class="ig-value-sm">${data.candidat.nom_employeur}${data.candidat.date_entree_emploi ? ` · Depuis le ${data.candidat.date_entree_emploi}` : ''}</div>
+      </div>` : ''}
     </div>
 
-    <div class="page-footer">
-      <div class="footer-legal">
-        Réf. ${data.dossier.reference} · drify.vercel.app
-      </div>
-      <div class="footer-page-num">1</div>
+    <div class="st">Documents inclus dans ce dossier</div>
+    <div class="dt">
+      <div class="dt-head"><span class="dt-h1">Document</span><span class="dt-h2">Statut</span></div>
+      ${data.documents.map((doc) => `
+      <div class="dt-row">
+        <div class="dt-left"><div class="dt-dot ${statusClass(doc.statut)}"></div><span class="dt-name">${doc.label}</span></div>
+        <span class="dt-badge ${statusClass(doc.statut)}">${statusLabel(doc.statut)}</span>
+      </div>`).join('')}
+    </div>
+
+    <div class="rgpd">
+      <div class="rgpd-t">Confidentialité &amp; Protection des données</div>
+      <div class="rgpd-txt">Dossier généré par Drify (drify.vercel.app) à des fins exclusives de recherche d'un logement. Protégé par le RGPD (UE 2016/679). Toute autre utilisation est interdite. Conservation max. 3 ans · DPO : privacy@drify.fr · CNIL : cnil.fr</div>
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════
-       PAGES DOCUMENTS
-  ══════════════════════════════════════ -->
-  ${buildDocPages(data)}
+  <footer class="pf">
+    <div class="pf-l">Réf. ${data.dossier.reference} · drify.vercel.app</div>
+    <div class="pf-n">1</div>
+  </footer>
+</div>
 
-  <!-- ══════════════════════════════════════
-       DERNIÈRE PAGE — MENTIONS LÉGALES
-  ══════════════════════════════════════ -->
-  <div class="page legal-page">
-    <div class="watermark" aria-hidden="true">
-      <div class="wm-track">${buildWatermarkItems(80)}</div>
-    </div>
+<!-- ══ PAGES DOCUMENTS ════════════════════════════ -->
+${buildDocPages(data)}
 
-    <header class="page-header">
-      <div class="header-brand">
-        <div class="header-logo-mark"></div>
-        <span class="header-brand-name">Drify</span>
+<!-- ══ DERNIÈRE PAGE — MENTIONS LÉGALES ════════ -->
+<div class="page" style="background:var(--begl)">
+  ${buildWatermark()}
+  <header class="ph">
+    <div class="ph-brand">${LOGO_LIGHT}</div>
+    <div class="ph-center">Mentions légales &amp; Protection des données</div>
+    <div class="ph-right"><div class="ph-ref">${data.dossier.reference}</div></div>
+  </header>
+
+  <div class="legal-body">
+    <p class="legal-intro">Mentions légales et politique de protection des données du dossier généré le <strong>${data.dossier.date_generation}</strong> par Drify, conformément au RGPD (UE 2016/679) et à la loi Informatique et Libertés.</p>
+
+    <div class="legal-grid">
+      <div class="la">
+        <div class="la-num">Article 1</div>
+        <div class="la-title">Responsable du traitement</div>
+        <div class="la-text">Drify (drify.vercel.app). DPO : <strong>privacy@drify.fr</strong></div>
       </div>
-      <div class="header-center">
-        <span class="header-doc-type">Mentions légales &amp; Protection des données</span>
+      <div class="la">
+        <div class="la-num">Article 2</div>
+        <div class="la-title">Finalité &amp; base légale</div>
+        <div class="la-text">Constitution de dossier de location et mise en relation propriétaire/locataire. Base : Art. 6.1.b et 6.1.a RGPD. Aucune cession à des tiers.</div>
       </div>
-      <div class="header-right">
-        <div class="header-ref">${data.dossier.reference}</div>
+      <div class="la">
+        <div class="la-num">Article 3</div>
+        <div class="la-title">Durée de conservation</div>
+        <div class="la-text">Maximum <strong>3 ans</strong>. Suppression sous 30 jours : <strong>privacy@drify.fr</strong></div>
       </div>
-    </header>
-
-    <div class="legal-body">
-      <p class="legal-intro">
-        Le présent document constitue les mentions légales et la politique de protection des données personnelles applicables
-        au dossier de location numérique généré par la plateforme Drify le <strong>${data.dossier.date_generation}</strong>.
-        Il est produit conformément au Règlement Général sur la Protection des Données (RGPD — UE 2016/679)
-        et à la loi Informatique et Libertés.
-      </p>
-
-      <div class="legal-articles">
-        <div class="legal-article">
-          <div class="legal-article-num">Article 1</div>
-          <div class="legal-article-title">Responsable du traitement</div>
-          <div class="legal-article-text">
-            Drify (drify.vercel.app) est responsable du traitement des données personnelles contenues dans ce dossier.
-            Délégué à la protection des données (DPO) : <strong>privacy@drify.fr</strong>
-          </div>
-        </div>
-
-        <div class="legal-article">
-          <div class="legal-article-num">Article 2</div>
-          <div class="legal-article-title">Finalité &amp; base légale du traitement</div>
-          <div class="legal-article-text">
-            Les données sont traitées exclusivement à des fins de constitution de dossier de location et de mise en relation
-            avec des propriétaires bailleurs. Base légale : Art. 6.1.b (exécution d'un contrat) et Art. 6.1.a (consentement explicite) du RGPD.
-            Aucune cession à des tiers non autorisés.
-          </div>
-        </div>
-
-        <div class="legal-article">
-          <div class="legal-article-num">Article 3</div>
-          <div class="legal-article-title">Durée de conservation</div>
-          <div class="legal-article-text">
-            Maximum <strong>3 ans</strong> après le dernier contact ou la fin de la relation contractuelle.
-            Suppression sur demande : <strong>privacy@drify.fr</strong> — Réponse garantie sous 30 jours calendaires.
-          </div>
-        </div>
-
-        <div class="legal-article">
-          <div class="legal-article-num">Article 4</div>
-          <div class="legal-article-title">Droits des personnes concernées</div>
-          <div class="legal-article-text">
-            Conformément au RGPD, vous disposez d'un droit d'<strong>accès</strong>, de <strong>rectification</strong>,
-            d'<strong>effacement</strong>, de <strong>portabilité</strong> et d'<strong>opposition</strong>.
-            Contact : <strong>privacy@drify.fr</strong> · Réclamation non traitée : <strong>CNIL — cnil.fr</strong>
-          </div>
-        </div>
-
-        <div class="legal-article">
-          <div class="legal-article-num">Article 5</div>
-          <div class="legal-article-title">Sécurité &amp; hébergement</div>
-          <div class="legal-article-text">
-            Données transmises via HTTPS/TLS 1.3. Documents stockés chiffrés (AES-256) sur infrastructure Supabase (UE).
-            Accès restreint aux seules personnes habilitées. Ce dossier est strictement confidentiel — usage locatif exclusif.
-          </div>
-        </div>
+      <div class="la">
+        <div class="la-num">Article 4</div>
+        <div class="la-title">Droits des personnes</div>
+        <div class="la-text">Accès, rectification, effacement, portabilité, opposition. Contact : <strong>privacy@drify.fr</strong> · Réclamation : <strong>cnil.fr</strong></div>
       </div>
-
-      <div class="legal-auth">
-        <div class="legal-auth-title">Authenticité du document</div>
-        <div class="legal-auth-text">
-          Ce dossier a été généré automatiquement le <strong style="color:var(--beg)">${data.dossier.date_generation}</strong> par la plateforme Drify.<br>
-          Pour vérifier l'authenticité, contactez <strong style="color:var(--beg)">verify@drify.fr</strong> avec la référence ci-dessous.
-        </div>
-        <div class="legal-auth-ref">${data.dossier.reference}</div>
+      <div class="la wide">
+        <div class="la-num">Article 5</div>
+        <div class="la-title">Sécurité &amp; hébergement</div>
+        <div class="la-text">Transmission HTTPS/TLS 1.3. Stockage chiffré AES-256 sur infrastructure Supabase (UE). Accès restreint aux personnes habilitées. Document strictement confidentiel — usage locatif exclusif.</div>
       </div>
     </div>
 
-    <div class="page-footer">
-      <div class="footer-legal">
-        Drify · drify.vercel.app · privacy@drify.fr · CNIL<br>
-        Réf. ${data.dossier.reference} · ${data.dossier.date_generation}
-      </div>
-      <div class="footer-page-num">${lastPageNum}</div>
+    <div class="legal-auth">
+      <div class="lauth-title">Authenticité du document</div>
+      <div class="lauth-text">Généré le <strong style="color:var(--beg)">${data.dossier.date_generation}</strong> par Drify.<br>Vérification : <strong style="color:var(--beg)">verify@drify.fr</strong> — mentionner la référence ci-dessous.</div>
+      <div class="lauth-ref">${data.dossier.reference}</div>
     </div>
   </div>
+
+  <footer class="pf">
+    <div class="pf-l">Drify · drify.vercel.app · privacy@drify.fr · CNIL<br>Réf. ${data.dossier.reference} · ${data.dossier.date_generation}</div>
+    <div class="pf-n">${lastPage}</div>
+  </footer>
+</div>
 
 </body>
 </html>`;
