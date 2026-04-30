@@ -4,7 +4,7 @@ import { generateDossierPDF } from '@/lib/pdf/generate-pdf';
 import { DossierTemplateData, DocumentType } from '@/lib/pdf/dossier-template';
 import { randomBytes } from 'crypto';
 
-export const maxDuration = 60; // Vercel function timeout
+export const maxDuration = 60;
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,7 +17,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
 
-    // Profil locataire
     const { data: profil, error: profilError } = await supabase
       .from('profils')
       .select('*')
@@ -31,14 +30,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Documents du locataire
     const { data: documents } = await supabase
       .from('documents')
       .select('*')
       .eq('user_id', user.id)
       .order('type', { ascending: true });
 
-    // URLs signées (1h) pour les documents vérifiés
     const docsWithUrls = await Promise.all(
       (documents || []).map(async (doc) => {
         let signedUrl: string | undefined;
@@ -90,14 +87,26 @@ export async function POST(request: NextRequest) {
 
     const pdfBuffer = await generateDossierPDF(templateData);
 
-    return new NextResponse(pdfBuffer as unknown as BodyInit, {
-      headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `inline; filename="dossier-drify-${reference}.pdf"`,
-      },
-    });
+    const storagePath = `${user.id}/dossier-valide.pdf`;
+    const { error: uploadError } = await supabase.storage
+      .from('dossiers-generes')
+      .upload(storagePath, pdfBuffer, {
+        contentType: 'application/pdf',
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.error('[PDF Save Error]', uploadError);
+      return NextResponse.json({ error: 'Erreur lors de la sauvegarde du dossier.' }, { status: 500 });
+    }
+
+    const { data: signedData } = await supabase.storage
+      .from('dossiers-generes')
+      .createSignedUrl(storagePath, 60 * 60 * 24);
+
+    return NextResponse.json({ url: signedData?.signedUrl ?? null, reference });
   } catch (error) {
-    console.error('[PDF Generation Error]', error);
-    return NextResponse.json({ error: 'Erreur lors de la génération du dossier.' }, { status: 500 });
+    console.error('[PDF Save Error]', error);
+    return NextResponse.json({ error: 'Erreur lors de la sauvegarde du dossier.' }, { status: 500 });
   }
 }

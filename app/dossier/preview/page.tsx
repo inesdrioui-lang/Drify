@@ -4,12 +4,15 @@ import { useState } from 'react';
 
 export default function DossierPreviewPage() {
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [savedReference, setSavedReference] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleGenerate = async () => {
     setLoading(true);
     setError(null);
+    setSavedReference(null);
     try {
       const res = await fetch('/api/dossier/generate', { method: 'POST' });
       if (!res.ok) {
@@ -26,6 +29,30 @@ export default function DossierPreviewPage() {
     }
   };
 
+  const handleSave = async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/dossier/save', { method: 'POST' });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error ?? 'Erreur de sauvegarde');
+      }
+      const { url, reference } = await res.json();
+      setSavedReference(reference);
+      if (url) {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `dossier-drify-${reference}.pdf`;
+        a.click();
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Impossible de valider le dossier. Réessayez.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center py-10 px-4" style={{ background: '#F7F2EA' }}>
       <div className="w-full max-w-4xl">
@@ -39,7 +66,7 @@ export default function DossierPreviewPage() {
             Mon dossier de location
           </h1>
           <p style={{ color: '#4A4A4A', fontSize: '0.875rem' }}>
-            Prévisualisez et téléchargez votre dossier complet au format PDF.
+            Prévisualisez votre dossier, puis validez-le pour le sauvegarder et le télécharger.
           </p>
         </div>
 
@@ -47,26 +74,38 @@ export default function DossierPreviewPage() {
         <div className="flex flex-wrap gap-3 mb-6">
           <button
             onClick={handleGenerate}
-            disabled={loading}
+            disabled={loading || saving}
             className="px-6 py-3 rounded-lg font-semibold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ background: '#6B3F26', color: '#fff' }}
-            onMouseEnter={(e) => !loading && ((e.target as HTMLElement).style.background = '#3B2314')}
-            onMouseLeave={(e) => !loading && ((e.target as HTMLElement).style.background = '#6B3F26')}
+            onMouseEnter={(e) => !(loading || saving) && ((e.target as HTMLElement).style.background = '#3B2314')}
+            onMouseLeave={(e) => !(loading || saving) && ((e.target as HTMLElement).style.background = '#6B3F26')}
           >
-            {loading ? 'Génération en cours…' : pdfUrl ? 'Regénérer le PDF' : 'Générer mon dossier PDF'}
+            {loading ? 'Génération en cours…' : pdfUrl ? 'Actualiser la prévisualisation' : 'Prévisualiser mon dossier'}
           </button>
 
           {pdfUrl && (
-            <a
-              href={pdfUrl}
-              download="mon-dossier-drify.pdf"
-              className="px-6 py-3 rounded-lg font-semibold text-sm transition-colors"
-              style={{ border: '1px solid #6B3F26', color: '#6B3F26', background: 'transparent' }}
+            <button
+              onClick={handleSave}
+              disabled={loading || saving}
+              className="px-6 py-3 rounded-lg font-semibold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ background: '#2E6644', color: '#fff' }}
+              onMouseEnter={(e) => !(loading || saving) && ((e.target as HTMLElement).style.background = '#1E4A30')}
+              onMouseLeave={(e) => !(loading || saving) && ((e.target as HTMLElement).style.background = '#2E6644')}
             >
-              Télécharger le PDF
-            </a>
+              {saving ? 'Sauvegarde en cours…' : 'Valider et télécharger'}
+            </button>
           )}
         </div>
+
+        {/* Confirmation sauvegarde */}
+        {savedReference && (
+          <div
+            className="px-4 py-3 rounded-lg text-sm mb-4"
+            style={{ background: '#F0F7F3', border: '1px solid #A8D5B5', color: '#2E6644' }}
+          >
+            ✓ Dossier validé et sauvegardé — réf. <strong>{savedReference}</strong>. Le téléchargement a démarré.
+          </div>
+        )}
 
         {/* Erreur */}
         {error && (
@@ -99,8 +138,8 @@ export default function DossierPreviewPage() {
             <div style={{ fontSize: '3rem', opacity: 0.4 }}>📋</div>
             <p style={{ color: '#6B3F26', fontWeight: 600 }}>Votre dossier apparaîtra ici</p>
             <p style={{ color: '#4A4A4A', fontSize: '0.875rem', maxWidth: '24rem' }}>
-              Cliquez sur &ldquo;Générer mon dossier PDF&rdquo; pour créer votre dossier complet
-              avec tous vos documents vérifiés.
+              Cliquez sur &ldquo;Prévisualiser mon dossier&rdquo; pour générer un aperçu.
+              Validez ensuite pour sauvegarder et télécharger la version définitive.
             </p>
           </div>
         )}
