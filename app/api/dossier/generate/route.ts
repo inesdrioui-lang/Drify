@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { generateDossierPDF } from '@/lib/pdf/generate-pdf';
-import { DossierTemplateData } from '@/lib/pdf/dossier-template';
+import { DossierTemplateData, DocumentType } from '@/lib/pdf/dossier-template';
 import { randomBytes } from 'crypto';
 
 export const maxDuration = 60; // Vercel function timeout
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
           signedUrl = data?.signedUrl;
         }
         return {
-          type: doc.type as string,
+          type: doc.type as DocumentType,
           label: (doc.label ?? 'Document') as string,
           statut: doc.statut as 'verifie' | 'non_fourni' | 'en_attente',
           url: signedUrl,
