@@ -210,37 +210,44 @@ export default function DossierClient({ userId, initialProfile, initialGarants, 
     setGenerating(true)
     setGenError(null)
     try {
-      const res = await fetch('/api/generate-dossier')
-      const text = await res.text()
-      let data: { url?: string; error?: string }
-      try {
-        data = JSON.parse(text)
-      } catch {
-        setGenError('Erreur serveur (réponse invalide). Vérifiez les logs Vercel.')
-        setGenerating(false)
+      const res = await fetch('/api/dossier/generate', { method: 'POST' })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setGenError(data.error ?? 'Erreur lors de la génération du PDF.')
         return
       }
-      if (data.url) {
-        setPdfUrl(data.url)
-        setPreviewed(true)
-      } else {
-        setGenError(data.error ?? 'Erreur lors de la génération du PDF.')
-      }
+      const blob = await res.blob()
+      if (pdfUrl) URL.revokeObjectURL(pdfUrl)
+      setPdfUrl(URL.createObjectURL(blob))
+      setPreviewed(true)
     } catch {
       setGenError('Impossible de joindre le serveur. Vérifiez votre connexion.')
+    } finally {
+      setGenerating(false)
     }
-    setGenerating(false)
   }
 
   async function handleValidate() {
     setValidating(true)
-    const result = await validateDossier()
-    if (result.success) {
+    setGenError(null)
+    try {
+      const res = await fetch('/api/dossier/save', { method: 'POST' })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setGenError(data.error ?? 'Erreur lors de la sauvegarde.')
+        return
+      }
+      const result = await validateDossier()
+      if (result.error) {
+        setGenError(result.error)
+        return
+      }
       setDossierValidated(true)
-    } else {
-      setGenError(result.error ?? 'Erreur lors de la validation.')
+    } catch {
+      setGenError('Impossible de valider le dossier. Vérifiez votre connexion.')
+    } finally {
+      setValidating(false)
     }
-    setValidating(false)
   }
 
   const guarantorResult = useMemo(() => {
