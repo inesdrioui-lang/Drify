@@ -209,6 +209,13 @@ export default function DossierClient({ userId, initialProfile, initialGarants, 
   async function handlePreview() {
     setGenerating(true)
     setGenError(null)
+    // Forcer la sauvegarde immédiate du profil avant de générer le PDF.
+    // Sans ça, l'API lit les vieilles données Supabase si le debounce (1500ms) n'a pas encore déclenché.
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current)
+      debounceRef.current = null
+    }
+    await doAutoSave(profile)
     try {
       const res = await fetch('/api/dossier/generate', { method: 'POST' })
       if (!res.ok) {
@@ -230,6 +237,12 @@ export default function DossierClient({ userId, initialProfile, initialGarants, 
   async function handleValidate() {
     setValidating(true)
     setGenError(null)
+    // Même garantie : forcer la sauvegarde avant d'appeler /api/dossier/save
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current)
+      debounceRef.current = null
+    }
+    await doAutoSave(profile)
     try {
       const res = await fetch('/api/dossier/save', { method: 'POST' })
       if (!res.ok) {
