@@ -24,6 +24,7 @@ export interface DossierDocument {
   label: string;
   statut: 'verifie' | 'non_fourni' | 'en_attente';
   url?: string;
+  data_url?: string; // base64 PNG generated from a PDF page via Puppeteer screenshot
   mime_type?: string;
   page_index?: number;
 }
@@ -62,9 +63,16 @@ const LOGO_LIGHT = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="180 375 700
   <path fill="#EDE0CF" d="M759.5,479.5L785.5,478.5L785.5,480.5C797.9,517.3 808.5,541.5 810,543.5C817.4,523 824.9,502.7 832.5,482.5C834,480.5 842.5,479.2 858.5,480C851.2,498 844.2,516.2 837.5,534.5C833.6,545.4 829.9,554 826.5,563.5C822.2,578.3 816.3,592 810,605.5C808.4,607.9 806.3,609.3 803.5,609.5L783.5,608.5C788.1,599.4 792.1,590 795.5,580.5C786.6,546.5 764.5,488.5 759.5,479.5Z"/>
 </svg>`;
 
+// Cover page — very light, almost invisible
 function buildWatermark(): string {
   const item = `<span class="wm-item">CONFIDENTIEL · DRIFY · USAGE LOCATIF EXCLUSIF · </span>`;
   return `<div class="watermark" aria-hidden="true"><div class="wm-inner">${Array(80).fill(item).join('')}</div></div>`;
+}
+
+// Document pages — clearly visible, correct legal wording
+function buildDocWatermark(): string {
+  const item = `<span class="wm-doc-item">DOCUMENT EXCLUSIVEMENT DESTINÉ À LA LOCATION IMMOBILIÈRE — DRIFY · </span>`;
+  return `<div class="watermark-doc" aria-hidden="true"><div class="wm-doc-inner">${Array(60).fill(item).join('')}</div></div>`;
 }
 
 function getInitials(prenom: string, nom: string): string {
@@ -80,11 +88,13 @@ function statusClass(s: DossierDocument['statut']): string {
 
 function buildDocPages(data: DossierTemplateData): string {
   return data.documents
-    .filter((d) => d.statut === 'verifie' && d.url)
-    .map(
-      (doc, i) => `
+    .filter((d) => d.statut === 'verifie' && (d.url || d.data_url))
+    .map((doc, i) => {
+      // data_url = PNG converted from PDF by Puppeteer; url = original signed URL (images)
+      const imgSrc = doc.data_url ?? (doc.mime_type?.startsWith('image/') ? doc.url : undefined);
+      return `
   <div class="page">
-    ${buildWatermark()}
+    ${buildDocWatermark()}
     <header class="ph">
       <div class="ph-brand">${LOGO_LIGHT}</div>
       <div class="ph-center">${doc.label}</div>
@@ -98,12 +108,12 @@ function buildDocPages(data: DossierTemplateData): string {
       <span class="ribbon-r">Document exclusif location immobilière — Drify</span>
     </div>
     <div class="doc-area">
-      ${doc.mime_type?.startsWith('image/')
-        ? `<img class="doc-img" src="${doc.url}" alt="${doc.label}" />`
+      ${imgSrc
+        ? `<img class="doc-img" src="${imgSrc}" alt="${doc.label}" />`
         : `<div class="doc-ph">
              <svg width="36" height="44" viewBox="0 0 36 44" fill="none"><rect x="1" y="1" width="34" height="42" rx="3" stroke="#D4B896" stroke-width="1.5"/><path d="M9 16h18M9 22h18M9 28h11" stroke="#D4B896" stroke-width="1.5" stroke-linecap="round"/><path d="M22 1v10h13" stroke="#D4B896" stroke-width="1.5" stroke-linejoin="round"/></svg>
              <div class="doc-ph-label">${doc.label}</div>
-             <div class="doc-ph-sub">Document PDF — voir fichier joint</div>
+             <div class="doc-ph-sub">Document PDF — conversion indisponible</div>
            </div>`
       }
     </div>
@@ -111,8 +121,8 @@ function buildDocPages(data: DossierTemplateData): string {
       <div class="pf-l">Drify · Dossier de location numérique · ${data.dossier.date_generation}<br>Document confidentiel · RGPD · Conservation max. 3 ans · privacy@drify.fr</div>
       <div class="pf-n">${i + 2}</div>
     </footer>
-  </div>`
-    )
+  </div>`;
+    })
     .join('');
 }
 
@@ -145,10 +155,15 @@ export function generateDossierHTML(data: DossierTemplateData): string {
     .page{width:210mm;min-height:297mm;position:relative;page-break-after:always;overflow:hidden;background:white}
     @media print{.page{page-break-after:always}}
 
-    /* WATERMARK */
+    /* WATERMARK — cover page (très discret) */
     .watermark{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:1}
     .wm-inner{position:absolute;top:-50%;left:-20%;width:160%;height:220%;transform:rotate(-32deg);display:flex;flex-wrap:wrap;align-content:flex-start;gap:22px 0}
     .wm-item{font-size:8px;font-weight:600;letter-spacing:3px;color:rgba(59,35,20,0.038);white-space:nowrap;padding-right:24px}
+
+    /* WATERMARK — pages documents (visible, au-dessus du document, sous le header) */
+    .watermark-doc{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:8}
+    .wm-doc-inner{position:absolute;top:-50%;left:-20%;width:160%;height:220%;transform:rotate(-32deg);display:flex;flex-wrap:wrap;align-content:flex-start;gap:26px 0}
+    .wm-doc-item{font-size:8.5px;font-weight:700;letter-spacing:3px;color:rgba(59,35,20,0.10);white-space:nowrap;padding-right:28px}
 
     /* PAGE HEADER */
     .ph{background:var(--bd);padding:5mm 12mm;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:10;gap:4mm}

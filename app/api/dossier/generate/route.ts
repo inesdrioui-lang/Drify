@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { generateDossierPDF } from '@/lib/pdf/generate-pdf';
-import { DossierTemplateData, DocumentType } from '@/lib/pdf/dossier-template';
+import { DossierTemplateData, DocumentType, DOCUMENT_LABELS } from '@/lib/pdf/dossier-template';
 import { randomBytes } from 'crypto';
 
 export const maxDuration = 60;
@@ -47,7 +47,7 @@ export async function POST() {
         }
         return {
           type: (doc.categorie ?? 'autre') as DocumentType,
-          label: (doc.nom ?? 'Document') as string,
+          label: DOCUMENT_LABELS[(doc.categorie ?? 'autre') as DocumentType] ?? (doc.nom ?? 'Document'),
           statut: (doc.statut ?? 'en_attente') as 'verifie' | 'non_fourni' | 'en_attente',
           url: signedUrl,
           mime_type: doc.mime_type as string | undefined,
