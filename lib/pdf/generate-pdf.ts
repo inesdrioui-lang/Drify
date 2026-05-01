@@ -52,7 +52,8 @@ export async function generateDossierPDF(data: DossierTemplateData): Promise<Buf
     // to a PDF, but can screenshot its own PDF viewer).
     const processedDocuments: DossierDocument[] = await Promise.all(
       data.documents.map(async (doc) => {
-        if (doc.mime_type === 'application/pdf' && doc.url && doc.statut === 'verifie') {
+        // Convertir tous les PDFs en image (pas seulement les 'verifie')
+        if (doc.mime_type === 'application/pdf' && doc.url) {
           const dataUrl = await convertPdfToImage(browser, doc.url);
           return { ...doc, data_url: dataUrl ?? undefined };
         }

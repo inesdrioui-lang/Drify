@@ -39,7 +39,7 @@ export async function POST() {
     const docsWithUrls = await Promise.all(
       (documents || []).map(async (doc) => {
         let signedUrl: string | undefined;
-        if (doc.fichier_path && doc.statut === 'verifie') {
+        if (doc.fichier_path) {
           const { data } = await supabase.storage
             .from('dossier-documents')
             .createSignedUrl(doc.fichier_path, 3600);
