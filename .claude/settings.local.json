@@ -40,7 +40,9 @@
       "Bash(ps -p 34892 -o pid,command)",
       "Bash(kill 34892)",
       "Bash(npm install *)",
-      "Bash(mdfind \"kMDItemCFBundleIdentifier == 'com.google.Chrome'\")"
+      "Bash(mdfind \"kMDItemCFBundleIdentifier == 'com.google.Chrome'\")",
+      "Bash(curl -s http://localhost:3001/api/dossier/generate -X POST -H \"Content-Type: application/json\")",
+      "Bash(node -e ' *)"
     ]
   }
 }
