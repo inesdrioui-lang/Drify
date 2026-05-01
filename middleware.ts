@@ -24,10 +24,12 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   const { pathname } = request.nextUrl
 
+  // /dossier/preview est la page de démo (données fictives) — accessible sans connexion
+  const publicDemoRoutes = ['/dossier/preview']
   const protectedRoutes = ['/dashboard', '/profil', '/dossier']
   const authRoutes = ['/connexion', '/inscription']
 
-  if (!user && protectedRoutes.some(r => pathname.startsWith(r))) {
+  if (!user && protectedRoutes.some(r => pathname.startsWith(r)) && !publicDemoRoutes.includes(pathname)) {
     return NextResponse.redirect(new URL('/connexion', request.url))
   }
 

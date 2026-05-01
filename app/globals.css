@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700;800&family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@400;500;600;700&display=swap');
 
 :root {
   --bg: #FDFCFA;
@@ -24,4 +24,55 @@ body {
   color: var(--text);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Dossier de location — styles d'impression ─── */
+
+/* Animation shimmer pour les skeletons de chargement */
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.dossier-shimmer {
+  background: linear-gradient(90deg, #EDE0CF 0%, #F7F2EA 50%, #EDE0CF 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+
+@media print {
+  /* Masque les éléments non imprimables */
+  .no-print {
+    display: none !important;
+  }
+
+  /* Masque la navbar et le footer du site */
+  header,
+  nav,
+  footer {
+    display: none !important;
+  }
+
+  /* Supprime l'arrière-plan de la page */
+  body,
+  main {
+    background: white !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Chaque page A4 génère un saut de page */
+  .dossier-page {
+    page-break-after: always;
+    break-after: page;
+    box-shadow: none !important;
+    margin: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Dernière page : pas de saut après */
+  .dossier-page:last-child {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
 }
