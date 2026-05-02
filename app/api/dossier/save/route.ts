@@ -45,10 +45,11 @@ export async function POST() {
             .createSignedUrl(doc.fichier_path, 3600);
           signedUrl = data?.signedUrl;
         }
+        const statut: 'verifie' | 'non_fourni' = signedUrl ? 'verifie' : 'non_fourni';
         return {
           type: (doc.categorie ?? 'autre') as DocumentType,
           label: DOCUMENT_LABELS[(doc.categorie ?? 'autre') as DocumentType] ?? (doc.nom ?? 'Document'),
-          statut: (doc.statut ?? 'en_attente') as 'verifie' | 'non_fourni' | 'en_attente',
+          statut,
           url: signedUrl,
           mime_type: doc.mime_type as string | undefined,
         };

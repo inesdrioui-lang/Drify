@@ -13,6 +13,7 @@ export interface DossierTemplateData {
     revenus_mensuels_nets: number
     nom_employeur?: string
     date_entree_emploi?: string
+    garant_label?: string
   }
   dossier: {
     reference: string
@@ -26,7 +27,7 @@ export interface DossierTemplateData {
 export interface DossierDocument {
   type: DocumentType
   label: string
-  statut: 'verifie' | 'non_fourni' | 'en_attente'
+  statut: 'verifie' | 'non_fourni'
   url?: string
   data_url?: string  // PNG converti depuis un PDF par Puppeteer screenshot
   mime_type?: string
@@ -63,26 +64,21 @@ function initials(prenom: string, nom: string) {
 }
 
 function statutLabel(s: DossierDocument['statut']) {
-  if (s === 'verifie') return 'Fourni'
-  if (s === 'non_fourni') return 'Non fourni'
-  return 'En attente'
+  return s === 'verifie' ? 'Fourni' : 'Non fourni'
 }
 
 function statutDotColor(s: DossierDocument['statut']) {
-  if (s === 'verifie') return '#4A7C59'
-  if (s === 'non_fourni') return '#9B3A2A'
-  return '#9B7226'
+  return s === 'verifie' ? '#4A7C59' : '#A0673A'
 }
 
 // Logo Drify minimaliste — rendu garanti dans Puppeteer headless
 function logo(darkBg = false) {
-  const textColor = darkBg ? '#F7F2EA' : '#3D2E22'
-  const boxBg     = darkBg ? 'rgba(247,242,234,0.15)' : '#3D2E22'
-  const boxColor  = darkBg ? '#F7F2EA' : '#F7F2EA'
+  const textColor = darkBg ? '#F7F2EA' : '#6B3F26'
+  const boxBg     = darkBg ? 'rgba(247,242,234,0.15)' : '#3B2314'
   return `
     <div style="display:flex;align-items:center;gap:7px">
       <div style="width:26px;height:26px;background:${boxBg};border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-        <span style="font-family:Georgia,serif;font-size:14px;font-weight:700;color:${boxColor};line-height:1">D</span>
+        <span style="font-family:'DM Sans',sans-serif;font-size:14px;font-weight:800;color:#FFFFFF;line-height:1">D</span>
       </div>
       <span style="font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;color:${textColor};letter-spacing:-0.03em">drify</span>
     </div>`
@@ -109,89 +105,176 @@ function pageFooter(ref: string, current: number, total: number) {
     </div>`
 }
 
+// ── SVG illustration ville ───────────────────────────────────────────────────
+
+function cityIllustrationSVG(): string {
+  return `<svg viewBox="0 0 730 130" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block">
+  <rect width="730" height="130" fill="#F7F2EA"/>
+  <circle cx="620" cy="38" r="28" fill="#EDE0CF"/>
+  <circle cx="632" cy="29" r="22" fill="#F7F2EA"/>
+  <rect x="0" y="60" width="50" height="70" rx="3" fill="#D4B896"/>
+  <rect x="7" y="70" width="9" height="11" rx="1" fill="#A0673A" opacity="0.5"/>
+  <rect x="22" y="70" width="9" height="11" rx="1" fill="#A0673A" opacity="0.5"/>
+  <rect x="37" y="70" width="9" height="11" rx="1" fill="#A0673A" opacity="0.5"/>
+  <rect x="7" y="88" width="9" height="11" rx="1" fill="#A0673A" opacity="0.5"/>
+  <rect x="22" y="88" width="9" height="11" rx="1" fill="#A0673A" opacity="0.5"/>
+  <rect x="37" y="88" width="9" height="11" rx="1" fill="#A0673A" opacity="0.5"/>
+  <rect x="48" y="25" width="76" height="105" rx="4" fill="#6B3F26"/>
+  <rect x="56" y="36" width="13" height="15" rx="2" fill="#EDE0CF" opacity="0.7"/>
+  <rect x="75" y="36" width="13" height="15" rx="2" fill="#EDE0CF" opacity="0.7"/>
+  <rect x="94" y="36" width="13" height="15" rx="2" fill="#EDE0CF" opacity="0.7"/>
+  <rect x="56" y="57" width="13" height="15" rx="2" fill="#EDE0CF" opacity="0.5"/>
+  <rect x="75" y="57" width="13" height="15" rx="2" fill="#EDE0CF" opacity="0.8"/>
+  <rect x="94" y="57" width="13" height="15" rx="2" fill="#EDE0CF" opacity="0.6"/>
+  <rect x="56" y="78" width="13" height="15" rx="2" fill="#EDE0CF" opacity="0.7"/>
+  <rect x="75" y="78" width="13" height="15" rx="2" fill="#EDE0CF" opacity="0.4"/>
+  <rect x="94" y="78" width="13" height="15" rx="2" fill="#EDE0CF" opacity="0.9"/>
+  <rect x="68" y="108" width="22" height="22" rx="2" fill="#3B2314" opacity="0.6"/>
+  <rect x="133" y="45" width="90" height="85" rx="4" fill="#A0673A"/>
+  <rect x="143" y="55" width="11" height="13" rx="1" fill="#F7F2EA" opacity="0.6"/>
+  <rect x="160" y="55" width="11" height="13" rx="1" fill="#F7F2EA" opacity="0.8"/>
+  <rect x="177" y="55" width="11" height="13" rx="1" fill="#F7F2EA" opacity="0.5"/>
+  <rect x="194" y="55" width="11" height="13" rx="1" fill="#F7F2EA" opacity="0.7"/>
+  <rect x="143" y="75" width="11" height="13" rx="1" fill="#F7F2EA" opacity="0.7"/>
+  <rect x="160" y="75" width="11" height="13" rx="1" fill="#F7F2EA" opacity="0.4"/>
+  <rect x="177" y="75" width="11" height="13" rx="1" fill="#F7F2EA" opacity="0.8"/>
+  <rect x="194" y="75" width="11" height="13" rx="1" fill="#F7F2EA" opacity="0.6"/>
+  <rect x="151" y="108" width="18" height="22" rx="2" fill="#3B2314" opacity="0.5"/>
+  <rect x="237" y="12" width="106" height="118" rx="4" fill="#3B2314"/>
+  <rect x="248" y="24" width="15" height="18" rx="2" fill="#EDE0CF" opacity="0.6"/>
+  <rect x="269" y="24" width="15" height="18" rx="2" fill="#EDE0CF" opacity="0.8"/>
+  <rect x="290" y="24" width="15" height="18" rx="2" fill="#EDE0CF" opacity="0.5"/>
+  <rect x="311" y="24" width="15" height="18" rx="2" fill="#EDE0CF" opacity="0.7"/>
+  <rect x="248" y="49" width="15" height="18" rx="2" fill="#EDE0CF" opacity="0.7"/>
+  <rect x="269" y="49" width="15" height="18" rx="2" fill="#EDE0CF" opacity="0.4"/>
+  <rect x="290" y="49" width="15" height="18" rx="2" fill="#EDE0CF" opacity="0.9"/>
+  <rect x="311" y="49" width="15" height="18" rx="2" fill="#EDE0CF" opacity="0.6"/>
+  <rect x="248" y="74" width="15" height="18" rx="2" fill="#EDE0CF" opacity="0.5"/>
+  <rect x="269" y="74" width="15" height="18" rx="2" fill="#EDE0CF" opacity="0.8"/>
+  <rect x="290" y="74" width="15" height="18" rx="2" fill="#EDE0CF" opacity="0.3"/>
+  <rect x="311" y="74" width="15" height="18" rx="2" fill="#EDE0CF" opacity="0.7"/>
+  <rect x="276" y="108" width="30" height="22" rx="2" fill="#6B3F26" opacity="0.8"/>
+  <rect x="357" y="40" width="84" height="90" rx="4" fill="#D4B896"/>
+  <rect x="367" y="52" width="13" height="14" rx="1" fill="#6B3F26" opacity="0.5"/>
+  <rect x="386" y="52" width="13" height="14" rx="1" fill="#6B3F26" opacity="0.7"/>
+  <rect x="405" y="52" width="13" height="14" rx="1" fill="#6B3F26" opacity="0.4"/>
+  <rect x="420" y="52" width="13" height="14" rx="1" fill="#6B3F26" opacity="0.6"/>
+  <rect x="367" y="73" width="13" height="14" rx="1" fill="#6B3F26" opacity="0.7"/>
+  <rect x="386" y="73" width="13" height="14" rx="1" fill="#6B3F26" opacity="0.3"/>
+  <rect x="405" y="73" width="13" height="14" rx="1" fill="#6B3F26" opacity="0.8"/>
+  <rect x="420" y="73" width="13" height="14" rx="1" fill="#6B3F26" opacity="0.5"/>
+  <rect x="378" y="108" width="20" height="22" rx="2" fill="#3B2314" opacity="0.4"/>
+  <rect x="452" y="30" width="72" height="100" rx="4" fill="#6B3F26" opacity="0.8"/>
+  <rect x="462" y="42" width="11" height="13" rx="1" fill="#EDE0CF" opacity="0.7"/>
+  <rect x="479" y="42" width="11" height="13" rx="1" fill="#EDE0CF" opacity="0.5"/>
+  <rect x="496" y="42" width="11" height="13" rx="1" fill="#EDE0CF" opacity="0.8"/>
+  <rect x="462" y="62" width="11" height="13" rx="1" fill="#EDE0CF" opacity="0.4"/>
+  <rect x="479" y="62" width="11" height="13" rx="1" fill="#EDE0CF" opacity="0.7"/>
+  <rect x="496" y="62" width="11" height="13" rx="1" fill="#EDE0CF" opacity="0.6"/>
+  <rect x="462" y="82" width="11" height="13" rx="1" fill="#EDE0CF" opacity="0.8"/>
+  <rect x="479" y="82" width="11" height="13" rx="1" fill="#EDE0CF" opacity="0.3"/>
+  <rect x="496" y="82" width="11" height="13" rx="1" fill="#EDE0CF" opacity="0.7"/>
+  <rect x="475" y="108" width="18" height="22" rx="2" fill="#3B2314" opacity="0.5"/>
+  <rect x="536" y="55" width="70" height="75" rx="3" fill="#D4B896" opacity="0.7"/>
+  <rect x="546" y="65" width="11" height="13" rx="1" fill="#A0673A" opacity="0.5"/>
+  <rect x="563" y="65" width="11" height="13" rx="1" fill="#A0673A" opacity="0.4"/>
+  <rect x="580" y="65" width="11" height="13" rx="1" fill="#A0673A" opacity="0.6"/>
+  <rect x="546" y="85" width="11" height="13" rx="1" fill="#A0673A" opacity="0.4"/>
+  <rect x="563" y="85" width="11" height="13" rx="1" fill="#A0673A" opacity="0.6"/>
+  <rect x="580" y="85" width="11" height="13" rx="1" fill="#A0673A" opacity="0.3"/>
+  <rect x="622" y="45" width="90" height="85" rx="3" fill="#A0673A" opacity="0.6"/>
+  <rect x="632" y="57" width="11" height="13" rx="1" fill="#F7F2EA" opacity="0.6"/>
+  <rect x="649" y="57" width="11" height="13" rx="1" fill="#F7F2EA" opacity="0.4"/>
+  <rect x="666" y="57" width="11" height="13" rx="1" fill="#F7F2EA" opacity="0.7"/>
+  <rect x="683" y="57" width="11" height="13" rx="1" fill="#F7F2EA" opacity="0.5"/>
+  <rect x="632" y="77" width="11" height="13" rx="1" fill="#F7F2EA" opacity="0.5"/>
+  <rect x="649" y="77" width="11" height="13" rx="1" fill="#F7F2EA" opacity="0.7"/>
+  <rect x="666" y="77" width="11" height="13" rx="1" fill="#F7F2EA" opacity="0.3"/>
+  <rect x="683" y="77" width="11" height="13" rx="1" fill="#F7F2EA" opacity="0.6"/>
+  <rect x="0" y="125" width="730" height="5" rx="0" fill="#D4B896" opacity="0.5"/>
+</svg>`
+}
+
 // ── Page de couverture ───────────────────────────────────────────────────────
 
 function buildCoverPage(data: DossierTemplateData, totalPages: number): string {
   const { candidat, dossier, documents } = data
-  const ini = initials(candidat.prenom, candidat.nom)
   const loyerMax = candidat.revenus_mensuels_nets
     ? Math.round(candidat.revenus_mensuels_nets / 3).toLocaleString('fr-FR')
     : '—'
 
-  const infoItems = [
-    { label: 'Revenus mensuels nets', value: candidat.revenus_mensuels_nets ? `${candidat.revenus_mensuels_nets.toLocaleString('fr-FR')} €` : '—', sub: `Loyer max recommandé : ${loyerMax} €` },
-    { label: 'Situation professionnelle', value: candidat.situation_professionnelle || '—', sub: candidat.nom_employeur ?? '' },
-    { label: 'Email', value: candidat.email || '—', sub: '' },
-    { label: 'Téléphone', value: candidat.telephone || '—', sub: '' },
-    { label: 'Adresse actuelle', value: candidat.adresse_actuelle || '—', sub: '' },
-    ...(dossier.taux_effort ? [{ label: "Taux d'effort estimé", value: `${dossier.taux_effort} %`, sub: 'sur le loyer cible' }] : []),
-  ]
+  const revenusStr = candidat.revenus_mensuels_nets
+    ? `${candidat.revenus_mensuels_nets.toLocaleString('fr-FR')} €`
+    : '—'
 
   const docsRows = documents.map((doc, i) => `
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:${i % 2 === 0 ? '#FFFFFF' : '#F7F2EA'};border-bottom:1px solid #EAE3DA">
-      <div style="display:flex;align-items:center;gap:8px">
-        <div style="width:7px;height:7px;border-radius:50%;background:${statutDotColor(doc.statut)};flex-shrink:0"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:${i % 2 === 0 ? '#FFFFFF' : '#F7F2EA'}${i < documents.length - 1 ? ';border-bottom:1px solid #EDE0CF' : ''}">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:18px;height:18px;background:#EDE0CF;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <span style="font-family:'DM Sans',sans-serif;font-size:8px;font-weight:700;color:#6B3F26">${i + 2}</span>
+        </div>
         <span style="font-family:'DM Sans',sans-serif;font-size:11px;color:#1A0F08">${doc.label}</span>
       </div>
-      <span style="font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;color:${statutDotColor(doc.statut)}">${statutLabel(doc.statut)}</span>
+      <div style="display:flex;align-items:center;gap:6px">
+        <div style="width:6px;height:6px;border-radius:50%;background:${statutDotColor(doc.statut)};flex-shrink:0"></div>
+        <span style="font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;color:${statutDotColor(doc.statut)}">${statutLabel(doc.statut)}</span>
+      </div>
     </div>`).join('')
 
   return `
-  <div class="page" style="display:flex;flex-direction:column">
+  <div class="page" style="display:flex;flex-direction:column;background:#FFFFFF">
 
-    <!-- Bandeau supérieur foncé -->
-    <div style="background:#3D2E22;padding:18px 32px 20px;flex-shrink:0">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-        ${logo(true)}
-        <span style="font-family:'DM Sans',sans-serif;font-size:9px;color:#D4B896;letter-spacing:0.04em">Généré le ${dossier.date_generation}</span>
+    <!-- Header : logo gauche, date droite -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 32px;border-bottom:1px solid #EDE0CF;flex-shrink:0">
+      ${logo(false)}
+      <span style="font-family:'DM Sans',sans-serif;font-size:9px;color:#8A7068">Généré le ${dossier.date_generation}</span>
+    </div>
+
+    <!-- Titre centré -->
+    <div style="text-align:center;padding:22px 32px 0;flex-shrink:0">
+      <p style="font-family:'DM Sans',sans-serif;font-size:9px;font-weight:600;color:#A0673A;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 6px">Le dossier de location de</p>
+      <h1 style="font-family:Georgia,serif;font-size:26px;font-weight:700;color:#3B2314;letter-spacing:-0.02em;margin:0;line-height:1.15">${candidat.prenom} ${candidat.nom.toUpperCase()}</h1>
+      <p style="font-family:'DM Sans',sans-serif;font-size:10px;color:#8A7068;margin:6px 0 0">${candidat.email}</p>
+    </div>
+
+    <!-- Illustration ville -->
+    <div style="margin:16px 32px;border-radius:10px;overflow:hidden;flex-shrink:0">
+      ${cityIllustrationSVG()}
+    </div>
+
+    <!-- Tableau 3 colonnes -->
+    <div style="margin:0 32px 16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:#D4B896;border:1px solid #D4B896;border-radius:12px;overflow:hidden;flex-shrink:0">
+      <div style="background:#EDE0CF;padding:14px 16px">
+        <div style="font-family:'DM Sans',sans-serif;font-size:8px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#6B3F26;margin-bottom:5px">Type de dossier</div>
+        <div style="font-family:Georgia,serif;font-size:14px;font-weight:700;color:#3B2314;line-height:1.2">Dossier seul</div>
+        <div style="font-family:'DM Sans',sans-serif;font-size:9px;color:#8A7068;margin-top:3px">${candidat.situation_professionnelle || '—'}</div>
       </div>
-
-      <!-- Identité principale -->
-      <div style="display:flex;align-items:center;gap:14px">
-        <div style="width:48px;height:48px;border-radius:50%;background:rgba(160,103,58,0.35);border:1.5px solid rgba(212,184,150,0.4);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <span style="font-family:Georgia,serif;font-size:17px;color:#F7F2EA;font-weight:700">${ini}</span>
-        </div>
-        <div>
-          <div style="font-family:Georgia,serif;font-size:22px;color:#FFFFFF;letter-spacing:-0.01em;line-height:1.1">${candidat.prenom} ${candidat.nom.toUpperCase()}</div>
-          <div style="font-family:'DM Sans',sans-serif;font-size:10px;color:#D4B896;margin-top:3px">${candidat.situation_professionnelle || 'Dossier de location'}${candidat.nom_employeur ? ` · ${candidat.nom_employeur}` : ''}</div>
-        </div>
-        ${dossier.score_confiance ? `
-        <div style="margin-left:auto;text-align:center;background:rgba(255,255,255,0.07);border:1px solid rgba(212,184,150,0.25);border-radius:8px;padding:8px 14px">
-          <div style="font-family:Georgia,serif;font-size:20px;color:#FFFFFF;font-weight:700">${dossier.score_confiance}</div>
-          <div style="font-family:'DM Sans',sans-serif;font-size:8px;color:#D4B896;letter-spacing:0.03em">SCORE /100</div>
-        </div>` : ''}
+      <div style="background:#FFFFFF;padding:14px 16px">
+        <div style="font-family:'DM Sans',sans-serif;font-size:8px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#6B3F26;margin-bottom:5px">Revenus mensuels nets</div>
+        <div style="font-family:'DM Sans',sans-serif;font-size:18px;font-weight:800;color:#6B3F26;line-height:1.2">${revenusStr}</div>
+        <div style="font-family:'DM Sans',sans-serif;font-size:9px;color:#8A7068;margin-top:3px">Loyer max : ${loyerMax} €/mois</div>
+      </div>
+      <div style="background:#EDE0CF;padding:14px 16px">
+        <div style="font-family:'DM Sans',sans-serif;font-size:8px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#6B3F26;margin-bottom:5px">Garant(s)</div>
+        <div style="font-family:Georgia,serif;font-size:14px;font-weight:700;color:#3B2314;line-height:1.2">${candidat.garant_label ?? 'Aucun'}</div>
       </div>
     </div>
 
-    <!-- Corps -->
-    <div style="padding:20px 32px 16px;flex:1">
-
-      <!-- Grille infos -->
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:#D4B896;border:1px solid #D4B896;border-radius:10px;overflow:hidden;margin-bottom:20px">
-        ${infoItems.map((item, i) => `
-        <div style="background:${i % 2 === 0 ? '#FFFFFF' : '#F7F2EA'};padding:12px 14px">
-          <div style="font-family:'DM Sans',sans-serif;font-size:8.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#96766A;margin-bottom:4px">${item.label}</div>
-          <div style="font-family:Georgia,serif;font-size:${i === 0 ? '16px' : '12px'};color:#3D2E22;font-weight:${i === 0 ? '700' : '400'};line-height:1.3">${item.value}</div>
-          ${item.sub ? `<div style="font-family:'DM Sans',sans-serif;font-size:9px;color:#96766A;margin-top:2px">${item.sub}</div>` : ''}
-        </div>`).join('')}
+    <!-- Table des matières -->
+    <div style="margin:0 32px;flex:1">
+      <div style="font-family:'DM Sans',sans-serif;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6B3F26;margin-bottom:8px">
+        Les pièces justificatives de ${candidat.prenom} ${candidat.nom} · ${candidat.email}
       </div>
-
-      <!-- Liste des documents -->
-      <div style="margin-bottom:16px">
-        <div style="font-family:'DM Sans',sans-serif;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#5C4433;margin-bottom:8px">Pièces du dossier</div>
-        ${documents.length > 0 ? `
-        <div style="border:1px solid #D4B896;border-radius:8px;overflow:hidden">
-          <div style="display:flex;justify-content:space-between;padding:7px 14px;background:#3D2E22">
-            <span style="font-family:'DM Sans',sans-serif;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;color:#D4B896">Document</span>
-            <span style="font-family:'DM Sans',sans-serif;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;color:#D4B896">Statut</span>
-          </div>
-          ${docsRows}
-        </div>` : `
-        <div style="border:1px dashed #D4B896;border-radius:8px;padding:16px;text-align:center">
-          <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:#96766A">Aucun document déposé</div>
-        </div>`}
+      ${documents.length > 0 ? `
+      <div style="border:1px solid #D4B896;border-radius:10px;overflow:hidden">
+        ${docsRows}
       </div>
-
+      <div style="text-align:right;margin-top:10px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;color:#6B3F26">
+        ${candidat.revenus_mensuels_nets ? `${candidat.revenus_mensuels_nets.toLocaleString('fr-FR')} € net` : ''}
+      </div>` : `
+      <div style="border:1px dashed #D4B896;border-radius:10px;padding:16px;text-align:center">
+        <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:#8A7068">Aucun document déposé</div>
+      </div>`}
     </div>
 
     ${pageFooter(dossier.reference, 1, totalPages)}
@@ -238,7 +321,7 @@ function buildDocPage(
           <path d="M31 40h6M34 37v6" stroke="#F7F2EA" stroke-width="1.8" stroke-linecap="round"/>
         </svg>
         <div style="text-align:center">
-          <div style="font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;color:#5C4433">${doc.statut === 'en_attente' ? 'Document en cours de vérification' : 'Document non fourni'}</div>
+          <div style="font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;color:#5C4433">Document non fourni</div>
           <div style="font-family:'DM Sans',sans-serif;font-size:10px;color:#96766A;margin-top:4px">${doc.label}</div>
         </div>
       </div>`}

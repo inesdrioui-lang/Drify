@@ -49,7 +49,7 @@ export default function DossierHeader({ prenom, nom, sectionLabel }: DossierHead
           style={{
             fontWeight: 700,
             fontSize: '15px',
-            color: '#3B2314',
+            color: '#6B3F26',
             letterSpacing: '-0.03em',
             fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
           }}

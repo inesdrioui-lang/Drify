@@ -4,6 +4,26 @@ import { generateDossierPDF } from '@/lib/pdf/generate-pdf';
 import { DossierTemplateData, DocumentType, DOCUMENT_LABELS } from '@/lib/pdf/dossier-template';
 import { randomBytes } from 'crypto';
 
+function normalizeName(s: string | null | undefined): string {
+  if (!s) return ''
+  return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()
+}
+
+const SITUATION_PRO_LABELS: Record<string, string> = {
+  salarie_cdi: 'Salarié CDI',
+  salarie_cdd: 'Salarié CDD',
+  fonctionnaire: 'Fonctionnaire',
+  independant: 'Indépendant / Freelance',
+  etudiant: 'Étudiant',
+  sans_emploi: 'Sans emploi',
+  retraite: 'Retraité',
+}
+
+function mapSituationPro(raw: string | null | undefined): string {
+  if (!raw) return ''
+  return SITUATION_PRO_LABELS[raw] ?? raw
+}
+
 export const maxDuration = 60;
 
 export async function POST() {
@@ -36,20 +56,29 @@ export async function POST() {
       .eq('user_id', user.id)
       .order('categorie', { ascending: true });
 
+    const { data: garantsData } = await supabase
+      .from('garants')
+      .select('id')
+      .eq('user_id', user.id);
+    const garantCount = garantsData?.length ?? 0;
+    const garantLabel = garantCount === 0 ? 'Aucun' : garantCount === 1 ? '1 garant' : `${garantCount} garants`;
+
     const docsWithUrls = await Promise.all(
       (documents || []).map(async (doc) => {
         let signedUrl: string | undefined;
-        // Signer l'URL pour tous les documents déposés (pas seulement 'verifie')
         if (doc.fichier_path) {
           const { data } = await supabase.storage
             .from('dossier-documents')
             .createSignedUrl(doc.fichier_path, 3600);
           signedUrl = data?.signedUrl;
         }
+        // Un document est "Fourni" si et seulement si on a pu générer une URL signée (fichier présent).
+        // On n'utilise jamais le champ `statut` Supabase pour ce calcul — il sert à la vérification interne Drify.
+        const statut: 'verifie' | 'non_fourni' = signedUrl ? 'verifie' : 'non_fourni';
         return {
           type: (doc.categorie ?? 'autre') as DocumentType,
           label: DOCUMENT_LABELS[(doc.categorie ?? 'autre') as DocumentType] ?? (doc.nom ?? 'Document'),
-          statut: (doc.statut ?? 'en_attente') as 'verifie' | 'non_fourni' | 'en_attente',
+          statut,
           url: signedUrl,
           mime_type: doc.mime_type as string | undefined,
         };
@@ -65,13 +94,14 @@ export async function POST() {
 
     const templateData: DossierTemplateData = {
       candidat: {
-        prenom: profil.prenom ?? '',
+        prenom: normalizeName(profil.prenom),
         nom: profil.nom ?? '',
         email: user.email ?? '',
         telephone: profil.telephone ?? '',
         adresse_actuelle: profil.adresse_actuelle ?? '',
-        situation_professionnelle: profil.situation_pro ?? '',
+        situation_professionnelle: mapSituationPro(profil.situation_pro),
         revenus_mensuels_nets: profil.revenus_mensuels ?? 0,
+        garant_label: garantLabel,
       },
       dossier: {
         reference,
