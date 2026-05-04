@@ -61,9 +61,9 @@ export default function DocumentUpload({
 
   async function handleFile(file: File) {
     setUploadError('')
-    const allowed = ['application/pdf', 'image/jpeg', 'image/png', 'image/heic', 'image/heif']
-    if (!allowed.includes(file.type) && !file.name.match(/\.(pdf|jpg|jpeg|png|heic)$/i)) {
-      setUploadError('Format non accepté. PDF, JPG, PNG ou HEIC uniquement.')
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']
+    if (!allowed.includes(file.type) && !file.name.match(/\.(jpg|jpeg|png|webp|heic)$/i)) {
+      setUploadError('Format non accepté. JPG, PNG ou WebP uniquement (pas de PDF).')
       return
     }
     if (file.size > 20 * 1024 * 1024) {
@@ -201,7 +201,7 @@ export default function DocumentUpload({
         <input
           ref={inputRef}
           type="file"
-          accept="application/pdf,image/jpeg,image/png,image/heic,image/heif,.heic"
+          accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic"
           style={{ display: 'none' }}
           onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = '' }}
         />
@@ -220,7 +220,7 @@ export default function DocumentUpload({
             <span className="docup-zone-text">
               {documents.length > 0 ? 'Ajouter un autre document' : `Déposer ou cliquer pour ajouter`}
             </span>
-            <span className="docup-zone-hint">PDF ou image (JPG, PNG, HEIC) · 20 Mo max</span>
+            <span className="docup-zone-hint">Image uniquement (JPG, PNG, WebP, HEIC) · 20 Mo max</span>
           </div>
         )}
       </div>

@@ -28,6 +28,39 @@ function mapSituationPro(raw: string | null | undefined): string {
 
 export const maxDuration = 60;
 
+function detectMimeType(path: string): string {
+  const ext = path.split('.').pop()?.toLowerCase()
+  const mimes: Record<string, string> = {
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    png: 'image/png',
+    webp: 'image/webp',
+  }
+  return mimes[ext ?? ''] ?? 'image/jpeg'
+}
+
+async function getBase64FromStorage(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  path: string
+): Promise<string> {
+  try {
+    const { data, error } = await supabase.storage
+      .from('dossier-documents')
+      .download(path)
+    if (error || !data) {
+      console.error(`[PDF] download error for ${path}:`, error)
+      return ''
+    }
+    const arrayBuffer = await data.arrayBuffer()
+    const base64 = Buffer.from(arrayBuffer).toString('base64')
+    const mimeType = data.type || detectMimeType(path)
+    return `data:${mimeType};base64,${base64}`
+  } catch (err) {
+    console.error(`[PDF] base64 conversion error for ${path}:`, err)
+    return ''
+  }
+}
+
 export async function POST() {
   try {
     const supabase = await createClient();
@@ -67,21 +100,18 @@ export async function POST() {
 
     const docsWithUrls = await Promise.all(
       (documents || []).map(async (doc) => {
-        let signedUrl: string | undefined;
+        let dataUrl: string | undefined;
         if (doc.fichier_path) {
-          const { data } = await supabase.storage
-            .from('dossier-documents')
-            .createSignedUrl(doc.fichier_path, 3600);
-          signedUrl = data?.signedUrl;
+          const b64 = await getBase64FromStorage(supabase, doc.fichier_path);
+          if (b64) dataUrl = b64;
         }
-        // Un document est "Fourni" si et seulement si on a pu générer une URL signée (fichier présent).
-        // On n'utilise jamais le champ `statut` Supabase pour ce calcul — il sert à la vérification interne Drify.
-        const statut: 'verifie' | 'non_fourni' = signedUrl ? 'verifie' : 'non_fourni';
+        const statut: 'verifie' | 'non_fourni' = dataUrl ? 'verifie' : 'non_fourni';
+        const docType = (doc.categorie ?? 'autre') as DocumentType;
         return {
-          type: (doc.categorie ?? 'autre') as DocumentType,
-          label: DOCUMENT_LABELS[(doc.categorie ?? 'autre') as DocumentType] ?? (doc.nom ?? 'Document'),
+          type: docType,
+          label: DOCUMENT_LABELS[docType] ?? (doc.nom ?? 'Document'),
           statut,
-          url: signedUrl,
+          data_url: dataUrl,
           mime_type: doc.mime_type as string | undefined,
         };
       })

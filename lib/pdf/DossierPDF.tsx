@@ -8,6 +8,7 @@ import {
   Image,
 } from '@react-pdf/renderer'
 import type { DossierTemplateData, DossierDocument } from './dossier-template'
+import { DOCUMENT_LABELS } from './dossier-template'
 
 // Helvetica est intégrée à tout lecteur PDF — aucun téléchargement réseau nécessaire.
 // Idéal pour Vercel et les environnements sans accès aux fonts externes.
@@ -298,16 +299,16 @@ function DocPage({
   totalPages: number
 }) {
   const { prenom, nom } = data.candidat
-  const imgSrc = doc.data_url ?? (doc.mime_type?.startsWith('image/') ? doc.url : undefined)
+  const imgSrc = doc.data_url && doc.data_url.startsWith('data:') ? doc.data_url : undefined
 
   return (
     <Page size="A4" style={s.page}>
-      <PageHeader prenom={prenom} nom={nom} section={doc.label} />
+      <PageHeader prenom={prenom} nom={nom} section={DOCUMENT_LABELS[doc.type] ?? doc.label} />
 
       <View style={s.sectionBand}>
         <View style={s.sectionAccent} />
         <View>
-          <Text style={s.sectionTitle}>{doc.label}</Text>
+          <Text style={s.sectionTitle}>{DOCUMENT_LABELS[doc.type] ?? doc.label}</Text>
           <Text style={s.sectionName}>
             {prenom} {nom}
           </Text>
@@ -317,10 +318,15 @@ function DocPage({
       <View style={s.docBody}>
         {imgSrc ? (
           <Image src={imgSrc} style={s.docImage} />
+        ) : doc.statut === 'verifie' ? (
+          <View style={s.docPlaceholder}>
+            <Text style={s.docPlaceholderText}>Impossible d'afficher ce document</Text>
+            <Text style={s.docPlaceholderSub}>Vérifiez le format du fichier (JPG ou PNG requis)</Text>
+          </View>
         ) : (
           <View style={s.docPlaceholder}>
             <Text style={s.docPlaceholderText}>Document non fourni</Text>
-            <Text style={s.docPlaceholderSub}>{doc.label}</Text>
+            <Text style={s.docPlaceholderSub}>{DOCUMENT_LABELS[doc.type] ?? doc.label}</Text>
           </View>
         )}
       </View>
@@ -340,11 +346,15 @@ export function DossierPDF({ data }: DossierPDFProps) {
   const { candidat, dossier, documents } = data
   const { prenom, nom } = candidat
 
-  const formatRevenu = (r: number) =>
-    r ? `${r.toLocaleString('fr-FR')} €` : '—'
+  const formatMoney = (r: number): string => {
+    const str = Math.round(r).toString()
+    return str.replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' €'
+  }
+
+  const formatRevenu = (r: number) => r ? formatMoney(r) : '—'
 
   const loyerMax = candidat.revenus_mensuels_nets
-    ? `${Math.round(candidat.revenus_mensuels_nets / 3).toLocaleString('fr-FR')} €`
+    ? formatMoney(Math.round(candidat.revenus_mensuels_nets / 3))
     : '—'
 
   const docsFournis = documents.filter((d) => d.statut === 'verifie')
@@ -405,7 +415,7 @@ export function DossierPDF({ data }: DossierPDFProps) {
                   <View style={s.tocBadge}>
                     <Text style={s.tocBadgeText}>{i + 2}</Text>
                   </View>
-                  <Text style={s.tocLabel}>{doc.label}</Text>
+                  <Text style={s.tocLabel}>{DOCUMENT_LABELS[doc.type] ?? doc.label}</Text>
                 </View>
                 <View style={s.tocStatus}>
                   <View
