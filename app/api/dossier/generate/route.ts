@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { generateDossierPDF } from '@/lib/pdf/generate-pdf';
+import { renderToBuffer } from '@react-pdf/renderer';
+import React from 'react';
+import { DossierPDF } from '@/lib/pdf/DossierPDF';
 import { DossierTemplateData, DocumentType, DOCUMENT_LABELS } from '@/lib/pdf/dossier-template';
 import { randomBytes } from 'crypto';
 
@@ -115,7 +117,9 @@ export async function POST() {
       documents: docsWithUrls,
     };
 
-    const pdfBuffer = await generateDossierPDF(templateData);
+    const pdfBuffer = await renderToBuffer(
+      React.createElement(DossierPDF, { data: templateData }) as Parameters<typeof renderToBuffer>[0]
+    );
 
     return new NextResponse(pdfBuffer as unknown as BodyInit, {
       headers: {
