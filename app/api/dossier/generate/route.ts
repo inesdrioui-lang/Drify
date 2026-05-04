@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { renderToBuffer } from '@react-pdf/renderer';
 import React from 'react';
 import { DossierPDF } from '@/lib/pdf/DossierPDF';
-import { DossierTemplateData, DocumentType, DOCUMENT_LABELS } from '@/lib/pdf/dossier-template';
+import { DossierTemplateData, DocumentType, DOCUMENT_LABELS, DOCUMENT_SORT_ORDER } from '@/lib/pdf/dossier-template';
 import { randomBytes } from 'crypto';
 
 function normalizeName(s: string | null | undefined): string {
@@ -88,8 +88,7 @@ export async function POST() {
     const { data: documents } = await supabase
       .from('documents')
       .select('*')
-      .eq('user_id', user.id)
-      .order('categorie', { ascending: true });
+      .eq('user_id', user.id);
 
     const { data: garantsData } = await supabase
       .from('garants')
@@ -98,8 +97,14 @@ export async function POST() {
     const garantCount = garantsData?.length ?? 0;
     const garantLabel = garantCount === 0 ? 'Aucun' : garantCount === 1 ? '1 garant' : `${garantCount} garants`;
 
+    const sortedDocuments = (documents || []).sort((a, b) => {
+      const orderA = DOCUMENT_SORT_ORDER[a.categorie ?? 'autre'] ?? 9;
+      const orderB = DOCUMENT_SORT_ORDER[b.categorie ?? 'autre'] ?? 9;
+      return orderA - orderB;
+    });
+
     const docsWithUrls = await Promise.all(
-      (documents || []).map(async (doc) => {
+      sortedDocuments.map(async (doc) => {
         let dataUrl: string | undefined;
         if (doc.fichier_path) {
           const b64 = await getBase64FromStorage(supabase, doc.fichier_path);

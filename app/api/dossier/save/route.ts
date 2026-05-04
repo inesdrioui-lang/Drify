@@ -3,10 +3,30 @@ import { createClient } from '@/lib/supabase/server';
 import { renderToBuffer } from '@react-pdf/renderer';
 import React from 'react';
 import { DossierPDF } from '@/lib/pdf/DossierPDF';
-import { DossierTemplateData, DocumentType, DOCUMENT_LABELS } from '@/lib/pdf/dossier-template';
+import { DossierTemplateData, DocumentType, DOCUMENT_LABELS, DOCUMENT_SORT_ORDER } from '@/lib/pdf/dossier-template';
 import { randomBytes } from 'crypto';
 
 export const maxDuration = 60;
+
+const SITUATION_PRO_LABELS: Record<string, string> = {
+  salarie_cdi: 'Salarié CDI',
+  salarie_cdd: 'Salarié CDD',
+  fonctionnaire: 'Fonctionnaire',
+  independant: 'Indépendant / Freelance',
+  etudiant: 'Étudiant',
+  sans_emploi: 'Sans emploi',
+  retraite: 'Retraité',
+}
+
+function mapSituationPro(raw: string | null | undefined): string {
+  if (!raw) return ''
+  return SITUATION_PRO_LABELS[raw] ?? raw
+}
+
+function normalizeName(s: string | null | undefined): string {
+  if (!s) return ''
+  return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()
+}
 
 export async function POST() {
   try {
@@ -35,11 +55,23 @@ export async function POST() {
     const { data: documents } = await supabase
       .from('documents')
       .select('*')
-      .eq('user_id', user.id)
-      .order('categorie', { ascending: true });
+      .eq('user_id', user.id);
+
+    const { data: garantsData } = await supabase
+      .from('garants')
+      .select('id')
+      .eq('user_id', user.id);
+    const garantCount = garantsData?.length ?? 0;
+    const garantLabel = garantCount === 0 ? 'Aucun' : garantCount === 1 ? '1 garant' : `${garantCount} garants`;
+
+    const sortedDocuments = (documents || []).sort((a, b) => {
+      const orderA = DOCUMENT_SORT_ORDER[a.categorie ?? 'autre'] ?? 9;
+      const orderB = DOCUMENT_SORT_ORDER[b.categorie ?? 'autre'] ?? 9;
+      return orderA - orderB;
+    });
 
     const docsWithUrls = await Promise.all(
-      (documents || []).map(async (doc) => {
+      sortedDocuments.map(async (doc) => {
         let signedUrl: string | undefined;
         if (doc.fichier_path) {
           const { data } = await supabase.storage
@@ -67,13 +99,14 @@ export async function POST() {
 
     const templateData: DossierTemplateData = {
       candidat: {
-        prenom: profil.prenom ?? '',
+        prenom: normalizeName(profil.prenom),
         nom: profil.nom ?? '',
         email: user.email ?? '',
         telephone: profil.telephone ?? '',
         adresse_actuelle: profil.adresse_actuelle ?? '',
-        situation_professionnelle: profil.situation_pro ?? '',
+        situation_professionnelle: mapSituationPro(profil.situation_pro),
         revenus_mensuels_nets: profil.revenus_mensuels ?? 0,
+        garant_label: garantLabel,
       },
       dossier: {
         reference,

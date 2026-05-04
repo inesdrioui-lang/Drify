@@ -35,26 +35,66 @@ export interface DossierDocument {
 }
 
 export type DocumentType =
+  | 'identite'
   | 'piece_identite'
   | 'justificatif_domicile'
+  | 'fiches_salaire'
   | 'contrat_travail'
   | 'bulletin_salaire'
   | 'avis_imposition'
+  | 'certificat_scolarite'
+  | 'carte_etudiant'
+  | 'bourse'
+  | 'kbis'
+  | 'bilans'
+  | 'pension'
+  | 'allocations'
   | 'quittance_loyer'
   | 'statut_entreprise'
   | 'bilan_comptable'
   | 'autre'
 
 export const DOCUMENT_LABELS: Record<DocumentType, string> = {
+  identite: "Pièce d'identité",
   piece_identite: "Pièce d'identité",
   justificatif_domicile: 'Justificatif de domicile',
+  fiches_salaire: 'Bulletins de salaire',
   contrat_travail: 'Contrat de travail',
   bulletin_salaire: 'Bulletin de salaire',
   avis_imposition: "Avis d'imposition",
+  certificat_scolarite: 'Certificat de scolarité',
+  carte_etudiant: 'Carte étudiante',
+  bourse: 'Justificatif de bourse',
+  kbis: 'Extrait Kbis / Statuts',
+  bilans: 'Bilans comptables',
+  pension: 'Justificatif de pension',
+  allocations: "Justificatif d'allocations",
   quittance_loyer: 'Quittance de loyer',
   statut_entreprise: "Statut d'entreprise",
   bilan_comptable: 'Bilan comptable',
   autre: 'Document complémentaire',
+}
+
+// Ordre canonique des documents dans le PDF (inspiré DossierFacile)
+export const DOCUMENT_SORT_ORDER: Record<string, number> = {
+  identite: 0,
+  piece_identite: 0,
+  justificatif_domicile: 1,
+  fiches_salaire: 2,
+  bulletin_salaire: 2,
+  certificat_scolarite: 2,
+  bourse: 3,
+  carte_etudiant: 3,
+  kbis: 2,
+  bilans: 3,
+  pension: 2,
+  allocations: 2,
+  contrat_travail: 4,
+  avis_imposition: 5,
+  quittance_loyer: 6,
+  statut_entreprise: 7,
+  bilan_comptable: 8,
+  autre: 9,
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────

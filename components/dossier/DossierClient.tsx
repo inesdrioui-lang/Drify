@@ -843,7 +843,7 @@ export default function DossierClient({ userId, initialProfile, initialGarants, 
                   type="number"
                   min="0"
                   value={profile.revenus_mensuels ?? ''}
-                  onChange={e => updateProfile('revenus_mensuels', parseFloat(e.target.value) || null)}
+                  onChange={e => updateProfile('revenus_mensuels', parseInt(e.target.value, 10) || null)}
                   placeholder="2 200"
                 />
                 {revenuLocataire > 0 && (
@@ -859,7 +859,7 @@ export default function DossierClient({ userId, initialProfile, initialGarants, 
                   type="number"
                   min="0"
                   value={profile.loyer_cible ?? ''}
-                  onChange={e => updateProfile('loyer_cible', parseFloat(e.target.value) || null)}
+                  onChange={e => updateProfile('loyer_cible', parseInt(e.target.value, 10) || null)}
                   placeholder="700"
                 />
               </div>
