@@ -75,6 +75,49 @@ export const DOCUMENT_LABELS: Record<DocumentType, string> = {
   autre: 'Document complémentaire',
 }
 
+// Titre humain pour chaque type de pièce — jamais de nom de fichier brut
+export function getHumanDocTitle(
+  type: DocumentType,
+  prenom: string,
+  index?: number
+): string {
+  const n = index !== undefined ? ` n°${index}` : ''
+  switch (type) {
+    case 'identite':
+    case 'piece_identite':
+      return `La pièce d'identité de ${prenom}`
+    case 'justificatif_domicile':
+      return `Le justificatif de domicile de ${prenom}`
+    case 'fiches_salaire':
+    case 'bulletin_salaire':
+      return `Le bulletin de salaire${n} de ${prenom}`
+    case 'avis_imposition':
+      return `L'avis d'imposition de ${prenom}`
+    case 'contrat_travail':
+      return `Le contrat de travail de ${prenom}`
+    case 'quittance_loyer':
+      return `La quittance de loyer${n} de ${prenom}`
+    case 'kbis':
+    case 'statut_entreprise':
+      return `L'extrait Kbis de ${prenom}`
+    case 'bilan_comptable':
+    case 'bilans':
+      return `Le bilan comptable${n} de ${prenom}`
+    case 'pension':
+      return `Le justificatif de pension de ${prenom}`
+    case 'allocations':
+      return `Le justificatif d'allocations de ${prenom}`
+    case 'certificat_scolarite':
+      return `Le certificat de scolarité de ${prenom}`
+    case 'carte_etudiant':
+      return `La carte étudiante de ${prenom}`
+    case 'bourse':
+      return `Le justificatif de bourse de ${prenom}`
+    default:
+      return `Le document de ${prenom}`
+  }
+}
+
 // Ordre canonique des documents dans le PDF (inspiré DossierFacile)
 export const DOCUMENT_SORT_ORDER: Record<string, number> = {
   identite: 0,

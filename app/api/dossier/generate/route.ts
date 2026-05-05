@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { renderToBuffer } from '@react-pdf/renderer';
 import React from 'react';
 import { DossierPDF } from '@/lib/pdf/DossierPDF';
-import { DossierTemplateData, DocumentType, DOCUMENT_LABELS, DOCUMENT_SORT_ORDER } from '@/lib/pdf/dossier-template';
+import { DossierTemplateData, DocumentType, DOCUMENT_LABELS, DOCUMENT_SORT_ORDER, getHumanDocTitle } from '@/lib/pdf/dossier-template';
 import { randomBytes } from 'crypto';
 
 function normalizeName(s: string | null | undefined): string {
@@ -103,8 +103,24 @@ export async function POST() {
       return orderA - orderB;
     });
 
+    const prenom = normalizeName(profil.prenom);
+
+    // Pré-compter les types pour numéroter les doublons (ex : bulletin n°1, n°2)
+    const typeCountMap: Record<string, number> = {};
+    for (const doc of sortedDocuments) {
+      const t = doc.categorie ?? 'autre';
+      typeCountMap[t] = (typeCountMap[t] ?? 0) + 1;
+    }
+    const typeSeqMap: Record<string, number> = {};
+    const docLabels = sortedDocuments.map((doc) => {
+      const docType = (doc.categorie ?? 'autre') as DocumentType;
+      typeSeqMap[docType] = (typeSeqMap[docType] ?? 0) + 1;
+      const idx = typeCountMap[docType] > 1 ? typeSeqMap[docType] : undefined;
+      return getHumanDocTitle(docType, prenom, idx);
+    });
+
     const docsWithUrls = await Promise.all(
-      sortedDocuments.map(async (doc) => {
+      sortedDocuments.map(async (doc, i) => {
         let dataUrl: string | undefined;
         if (doc.fichier_path) {
           const b64 = await getBase64FromStorage(supabase, doc.fichier_path);
@@ -114,7 +130,7 @@ export async function POST() {
         const docType = (doc.categorie ?? 'autre') as DocumentType;
         return {
           type: docType,
-          label: DOCUMENT_LABELS[docType] ?? (doc.nom ?? 'Document'),
+          label: docLabels[i],
           statut,
           data_url: dataUrl,
           mime_type: doc.mime_type as string | undefined,
@@ -131,7 +147,7 @@ export async function POST() {
 
     const templateData: DossierTemplateData = {
       candidat: {
-        prenom: normalizeName(profil.prenom),
+        prenom,
         nom: profil.nom ?? '',
         email: user.email ?? '',
         telephone: profil.telephone ?? '',

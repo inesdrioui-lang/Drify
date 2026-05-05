@@ -8,7 +8,6 @@ import {
   Image,
 } from '@react-pdf/renderer'
 import type { DossierTemplateData, DossierDocument } from './dossier-template'
-import { DOCUMENT_LABELS } from './dossier-template'
 
 // Helvetica est intégrée à tout lecteur PDF — aucun téléchargement réseau nécessaire.
 // Idéal pour Vercel et les environnements sans accès aux fonts externes.
@@ -143,6 +142,32 @@ const s = StyleSheet.create({
   tocDot: { width: 5, height: 5, borderRadius: 3, marginRight: 4 },
   tocStatusText: { fontSize: 8, fontWeight: 700 },
   tocDate: { fontSize: 9, color: C.textMuted, textAlign: 'right', marginTop: 14 },
+  tocPage: { fontSize: 9, fontWeight: 700, color: C.brownMid },
+
+  // Loyer max callout
+  loyerBand: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: C.beigeLight,
+    borderRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: C.brownMid,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginBottom: 18,
+  },
+  loyerBandLeft: { flexDirection: 'column' },
+  loyerLabel: { fontSize: 7, fontWeight: 700, color: C.textMuted, letterSpacing: 0.5, marginBottom: 2 },
+  loyerValue: { fontSize: 20, fontWeight: 700, color: C.brownDark },
+  loyerSub: { fontSize: 8, color: C.textMuted, marginTop: 2 },
+  loyerBadge: {
+    backgroundColor: C.beige,
+    borderRadius: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  loyerBadgeText: { fontSize: 8, fontWeight: 700, color: C.brown },
 
   coverLegal: {
     fontSize: 7,
@@ -303,12 +328,12 @@ function DocPage({
 
   return (
     <Page size="A4" style={s.page}>
-      <PageHeader prenom={prenom} nom={nom} section={DOCUMENT_LABELS[doc.type] ?? doc.label} />
+      <PageHeader prenom={prenom} nom={nom} section={doc.label} />
 
       <View style={s.sectionBand}>
         <View style={s.sectionAccent} />
         <View>
-          <Text style={s.sectionTitle}>{DOCUMENT_LABELS[doc.type] ?? doc.label}</Text>
+          <Text style={s.sectionTitle}>{doc.label}</Text>
           <Text style={s.sectionName}>
             {prenom} {nom}
           </Text>
@@ -326,7 +351,7 @@ function DocPage({
         ) : (
           <View style={s.docPlaceholder}>
             <Text style={s.docPlaceholderText}>Document non fourni</Text>
-            <Text style={s.docPlaceholderSub}>{DOCUMENT_LABELS[doc.type] ?? doc.label}</Text>
+            <Text style={s.docPlaceholderSub}>{doc.label}</Text>
           </View>
         )}
       </View>
@@ -394,13 +419,27 @@ export function DossierPDF({ data }: DossierPDFProps) {
             <View style={s.recapCard}>
               <Text style={s.recapLabel}>REVENUS MENSUELS NETS</Text>
               <Text style={s.recapValue}>{formatRevenu(candidat.revenus_mensuels_nets)}</Text>
-              <Text style={s.recapSub}>Loyer max : {loyerMax}/mois</Text>
+              <Text style={s.recapSub}>nets / mois</Text>
             </View>
             <View style={[s.recapCard, s.recapCardLast]}>
               <Text style={s.recapLabel}>GARANT(S)</Text>
               <Text style={s.recapValue}>{candidat.garant_label ?? 'Aucun'}</Text>
             </View>
           </View>
+
+          {/* Loyer maximum recommandé */}
+          {candidat.revenus_mensuels_nets > 0 && (
+            <View style={s.loyerBand}>
+              <View style={s.loyerBandLeft}>
+                <Text style={s.loyerLabel}>LOYER MAXIMUM RECOMMANDÉ</Text>
+                <Text style={s.loyerValue}>{loyerMax} / mois</Text>
+                <Text style={s.loyerSub}>Taux d'effort 33% — revenus nets ÷ 3</Text>
+              </View>
+              <View style={s.loyerBadge}>
+                <Text style={s.loyerBadgeText}>Règle 1/3</Text>
+              </View>
+            </View>
+          )}
 
           {/* Table des matières */}
           <Text style={s.tocTitle}>
@@ -412,27 +451,15 @@ export function DossierPDF({ data }: DossierPDFProps) {
             return (
               <View key={i} style={s.tocRow}>
                 <View style={s.tocLeft}>
-                  <View style={s.tocBadge}>
-                    <Text style={s.tocBadgeText}>{i + 2}</Text>
-                  </View>
-                  <Text style={s.tocLabel}>{DOCUMENT_LABELS[doc.type] ?? doc.label}</Text>
-                </View>
-                <View style={s.tocStatus}>
                   <View
                     style={[
                       s.tocDot,
-                      { backgroundColor: fourni ? C.success : C.brownLight },
+                      { backgroundColor: fourni ? C.success : C.brownLight, marginRight: 8 },
                     ]}
                   />
-                  <Text
-                    style={[
-                      s.tocStatusText,
-                      { color: fourni ? C.success : C.brownLight },
-                    ]}
-                  >
-                    {fourni ? 'Fourni' : 'Non fourni'}
-                  </Text>
+                  <Text style={s.tocLabel}>{doc.label}</Text>
                 </View>
+                <Text style={s.tocPage}>p.{i + 2}</Text>
               </View>
             )
           })}
@@ -441,9 +468,8 @@ export function DossierPDF({ data }: DossierPDFProps) {
         </View>
 
         <Text style={s.coverLegal}>
-          Le service fourni par Drify ne saurait être assimilé à une garantie sur les
-          dossiers. Drify ne saurait être tenu responsable d'un litige entre locataire et
-          bailleur.
+          Réf. {dossier.reference} · Généré le {dossier.date_generation} · Le service
+          fourni par Drify ne constitue pas une garantie sur les dossiers.
         </Text>
       </Page>
 
