@@ -38,7 +38,7 @@ export async function saveTenantProfile(
 
   const { error } = await supabase
     .from('tenant_profiles')
-    .upsert({ user_id: user.id, ...data, updated_at: new Date().toISOString() }, { onConflict: 'user_id' })
+    .upsert({ user_id: user.id, ...data }, { onConflict: 'user_id' })
 
   if (error) return { error: error.message }
   revalidatePath('/locataire/dossier')
@@ -55,7 +55,7 @@ export async function saveGarant(
   if (data.id) {
     const { error } = await supabase
       .from('garants')
-      .update({ ...data, updated_at: new Date().toISOString() })
+      .update({ ...data })
       .eq('id', data.id)
       .eq('user_id', user.id)
     if (error) return { error: error.message }
@@ -64,7 +64,7 @@ export async function saveGarant(
   } else {
     const { data: inserted, error } = await supabase
       .from('garants')
-      .insert({ user_id: user.id, ...data, created_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+      .insert({ user_id: user.id, ...data })
       .select('id')
       .single()
     if (error) return { error: error.message }
@@ -156,7 +156,7 @@ export async function validateDossier(): Promise<{ error?: string; success?: boo
 
   const { error } = await supabase
     .from('tenant_profiles')
-    .update({ dossier_statut: 'valide', updated_at: new Date().toISOString() })
+    .update({ dossier_statut: 'valide' })
     .eq('user_id', user.id)
 
   if (error) return { error: error.message }
