@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { renderToBuffer } from '@react-pdf/renderer';
 import React from 'react';
 import { DossierPDF } from '@/lib/pdf/DossierPDF';
-import { DossierTemplateData, DocumentType, DOCUMENT_LABELS, DOCUMENT_SORT_ORDER } from '@/lib/pdf/dossier-template';
+import { DossierTemplateData, DocumentType, DOCUMENT_SORT_ORDER, getHumanDocTitle } from '@/lib/pdf/dossier-template';
 import { randomBytes } from 'crypto';
 
 export const maxDuration = 60;
@@ -28,8 +28,26 @@ function normalizeName(s: string | null | undefined): string {
   return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()
 }
 
-export async function POST() {
+interface ClientProfileOverride {
+  prenom?: string
+  nom?: string
+  situation_pro?: string
+  revenus_mensuels?: number | null
+  loyer_cible?: number | null
+  telephone?: string
+  adresse_actuelle?: string
+}
+
+export async function POST(request: Request) {
   try {
+    let clientProfile: ClientProfileOverride = {}
+    try {
+      const body = await request.json()
+      if (body?.profile && typeof body.profile === 'object') {
+        clientProfile = body.profile
+      }
+    } catch { /* body absent — on continue avec la DB */ }
+
     const supabase = await createClient();
     const {
       data: { user },
@@ -52,6 +70,17 @@ export async function POST() {
       );
     }
 
+    const mergedProfil = {
+      ...profil,
+      prenom:           clientProfile.prenom           ?? profil.prenom,
+      nom:              clientProfile.nom               ?? profil.nom,
+      situation_pro:    clientProfile.situation_pro     ?? profil.situation_pro,
+      revenus_mensuels: clientProfile.revenus_mensuels  ?? profil.revenus_mensuels,
+      loyer_cible:      clientProfile.loyer_cible       ?? profil.loyer_cible,
+      telephone:        clientProfile.telephone         ?? profil.telephone,
+      adresse_actuelle: clientProfile.adresse_actuelle  ?? profil.adresse_actuelle,
+    }
+
     const { data: documents } = await supabase
       .from('documents')
       .select('*')
@@ -70,6 +99,15 @@ export async function POST() {
       return orderA - orderB;
     });
 
+    const prenom = normalizeName(mergedProfil.prenom);
+
+    const typeCountMap: Record<string, number> = {};
+    for (const doc of sortedDocuments) {
+      const t = doc.categorie ?? 'autre';
+      typeCountMap[t] = (typeCountMap[t] ?? 0) + 1;
+    }
+    const typeSeqMap: Record<string, number> = {};
+
     const docsWithUrls = await Promise.all(
       sortedDocuments.map(async (doc) => {
         let signedUrl: string | undefined;
@@ -80,9 +118,12 @@ export async function POST() {
           signedUrl = data?.signedUrl;
         }
         const statut: 'verifie' | 'non_fourni' = signedUrl ? 'verifie' : 'non_fourni';
+        const docType = (doc.categorie ?? 'autre') as DocumentType;
+        typeSeqMap[docType] = (typeSeqMap[docType] ?? 0) + 1;
+        const idx = typeCountMap[docType] > 1 ? typeSeqMap[docType] : undefined;
         return {
-          type: (doc.categorie ?? 'autre') as DocumentType,
-          label: DOCUMENT_LABELS[(doc.categorie ?? 'autre') as DocumentType] ?? (doc.nom ?? 'Document'),
+          type: docType,
+          label: getHumanDocTitle(docType, prenom, idx),
           statut,
           url: signedUrl,
           mime_type: doc.mime_type as string | undefined,
@@ -99,21 +140,21 @@ export async function POST() {
 
     const templateData: DossierTemplateData = {
       candidat: {
-        prenom: normalizeName(profil.prenom),
-        nom: profil.nom ?? '',
+        prenom,
+        nom: mergedProfil.nom ?? '',
         email: user.email ?? '',
-        telephone: profil.telephone ?? '',
-        adresse_actuelle: profil.adresse_actuelle ?? '',
-        situation_professionnelle: mapSituationPro(profil.situation_pro),
-        revenus_mensuels_nets: profil.revenus_mensuels ?? 0,
+        telephone: mergedProfil.telephone ?? '',
+        adresse_actuelle: mergedProfil.adresse_actuelle ?? '',
+        situation_professionnelle: mapSituationPro(mergedProfil.situation_pro),
+        revenus_mensuels_nets: mergedProfil.revenus_mensuels ?? 0,
         garant_label: garantLabel,
       },
       dossier: {
         reference,
         date_generation: dateGeneration,
         taux_effort:
-          profil.loyer_cible && profil.revenus_mensuels
-            ? Math.round((profil.loyer_cible / profil.revenus_mensuels) * 100)
+          mergedProfil.loyer_cible && mergedProfil.revenus_mensuels
+            ? Math.round((mergedProfil.loyer_cible / mergedProfil.revenus_mensuels) * 100)
             : undefined,
         score_confiance: profil.score_confiance ?? undefined,
       },

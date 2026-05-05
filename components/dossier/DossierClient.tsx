@@ -217,7 +217,13 @@ export default function DossierClient({ userId, initialProfile, initialGarants, 
     }
     await doAutoSave(profile)
     try {
-      const res = await fetch('/api/dossier/generate', { method: 'POST' })
+      const res = await fetch('/api/dossier/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        // Envoyer l'état courant du formulaire pour garantir la cohérence du PDF,
+        // même si la sauvegarde DB n'est pas encore propagée (cache Supabase, réplication)
+        body: JSON.stringify({ profile }),
+      })
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
         setGenError(data.error ?? 'Erreur lors de la génération du PDF.')
@@ -244,7 +250,11 @@ export default function DossierClient({ userId, initialProfile, initialGarants, 
     }
     await doAutoSave(profile)
     try {
-      const res = await fetch('/api/dossier/save', { method: 'POST' })
+      const res = await fetch('/api/dossier/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profile }),
+      })
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
         setGenError(data.error ?? 'Erreur lors de la sauvegarde.')

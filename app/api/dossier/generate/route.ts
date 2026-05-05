@@ -61,8 +61,28 @@ async function getBase64FromStorage(
   }
 }
 
-export async function POST() {
+// Champs du profil transmis par le client pour garantir la fraîcheur des données
+interface ClientProfileOverride {
+  prenom?: string
+  nom?: string
+  situation_pro?: string
+  revenus_mensuels?: number | null
+  loyer_cible?: number | null
+  telephone?: string
+  adresse_actuelle?: string
+}
+
+export async function POST(request: Request) {
   try {
+    // Lire les données de profil envoyées par le client (état courant du formulaire)
+    let clientProfile: ClientProfileOverride = {}
+    try {
+      const body = await request.json()
+      if (body?.profile && typeof body.profile === 'object') {
+        clientProfile = body.profile
+      }
+    } catch { /* body absent ou non-JSON — on continue avec la DB */ }
+
     const supabase = await createClient();
     const {
       data: { user },
@@ -85,6 +105,19 @@ export async function POST() {
       );
     }
 
+    // Fusionner : les données client (fraîches, ce que l'utilisateur voit)
+    // priment sur la DB pour éviter tout décalage lié au cache ou à la réplication
+    const mergedProfil = {
+      ...profil,
+      prenom:           clientProfile.prenom           ?? profil.prenom,
+      nom:              clientProfile.nom               ?? profil.nom,
+      situation_pro:    clientProfile.situation_pro     ?? profil.situation_pro,
+      revenus_mensuels: clientProfile.revenus_mensuels  ?? profil.revenus_mensuels,
+      loyer_cible:      clientProfile.loyer_cible       ?? profil.loyer_cible,
+      telephone:        clientProfile.telephone         ?? profil.telephone,
+      adresse_actuelle: clientProfile.adresse_actuelle  ?? profil.adresse_actuelle,
+    }
+
     const { data: documents } = await supabase
       .from('documents')
       .select('*')
@@ -103,7 +136,7 @@ export async function POST() {
       return orderA - orderB;
     });
 
-    const prenom = normalizeName(profil.prenom);
+    const prenom = normalizeName(mergedProfil.prenom);
 
     // Pré-compter les types pour numéroter les doublons (ex : bulletin n°1, n°2)
     const typeCountMap: Record<string, number> = {};
@@ -148,20 +181,20 @@ export async function POST() {
     const templateData: DossierTemplateData = {
       candidat: {
         prenom,
-        nom: profil.nom ?? '',
+        nom: mergedProfil.nom ?? '',
         email: user.email ?? '',
-        telephone: profil.telephone ?? '',
-        adresse_actuelle: profil.adresse_actuelle ?? '',
-        situation_professionnelle: mapSituationPro(profil.situation_pro),
-        revenus_mensuels_nets: profil.revenus_mensuels ?? 0,
+        telephone: mergedProfil.telephone ?? '',
+        adresse_actuelle: mergedProfil.adresse_actuelle ?? '',
+        situation_professionnelle: mapSituationPro(mergedProfil.situation_pro),
+        revenus_mensuels_nets: mergedProfil.revenus_mensuels ?? 0,
         garant_label: garantLabel,
       },
       dossier: {
         reference,
         date_generation: dateGeneration,
         taux_effort:
-          profil.loyer_cible && profil.revenus_mensuels
-            ? Math.round((profil.loyer_cible / profil.revenus_mensuels) * 100)
+          mergedProfil.loyer_cible && mergedProfil.revenus_mensuels
+            ? Math.round((mergedProfil.loyer_cible / mergedProfil.revenus_mensuels) * 100)
             : undefined,
         score_confiance: profil.score_confiance ?? undefined,
       },
