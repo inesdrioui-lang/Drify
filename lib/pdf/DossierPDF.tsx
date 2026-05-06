@@ -6,14 +6,17 @@ import {
   View,
   StyleSheet,
   Image,
+  Svg,
+  Path,
+  Rect,
 } from '@react-pdf/renderer'
 import type { DossierTemplateData, DossierDocument } from './dossier-template'
 
-// Helvetica est intégrée à tout lecteur PDF — aucun téléchargement réseau nécessaire.
-// Idéal pour Vercel et les environnements sans accès aux fonts externes.
+// Fonts intégrés — aucun réseau requis (Vercel-safe)
 const FONT = 'Helvetica'
+const FONT_BOLD = 'Helvetica-Bold'
 
-// ── Couleurs Drify ────────────────────────────────────────────────────────
+// ── Palette Drify ─────────────────────────────────────────────────────────
 const C = {
   brownDark:  '#3B2314',
   brown:      '#6B3F26',
@@ -26,7 +29,56 @@ const C = {
   textDark:   '#1A0F08',
   textMuted:  '#8A7068',
   success:    '#4A7C59',
-  error:      '#9B3A2A',
+}
+
+// ── Logo mark — maison simplifiée (compatible react-pdf SVG) ──────────────
+function DrifyMark({
+  fill,
+  door,
+  size,
+}: {
+  fill: string
+  door: string
+  size: number
+}) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      {/* Silhouette maison */}
+      <Path d="M 12 2 L 22 10 L 22 22 L 2 22 L 2 10 Z" fill={fill} />
+      {/* Porte */}
+      <Rect x={8.5} y={15} width={7} height={7} rx={1} fill={door} />
+    </Svg>
+  )
+}
+
+// Logo complet : mark + wordmark
+function DrifyLogo({
+  fill,
+  door,
+  markSize,
+  fontSize,
+}: {
+  fill: string
+  door: string
+  markSize: number
+  fontSize: number
+}) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+      <DrifyMark fill={fill} door={door} size={markSize} />
+      <Text
+        style={{
+          fontFamily: FONT_BOLD,
+          fontSize,
+          color: fill,
+          marginLeft: 5,
+          letterSpacing: 0.3,
+        }}
+      >
+        Drify
+      </Text>
+    </View>
+  )
 }
 
 // ── Styles ────────────────────────────────────────────────────────────────
@@ -36,28 +88,27 @@ const s = StyleSheet.create({
     fontFamily: FONT,
     fontSize: 10,
     color: C.textDark,
-    paddingTop: 0,
-    paddingBottom: 0,
-    paddingHorizontal: 0,
   },
 
-  // En-tête
+  // En-tête pages document
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 32,
-    paddingVertical: 12,
+    paddingHorizontal: 28,
+    paddingVertical: 11,
     backgroundColor: C.beigeLight,
     borderBottomWidth: 1,
     borderBottomColor: C.beigeDark,
   },
-  headerLeft: { flexDirection: 'column' },
-  headerLogo: { fontSize: 15, fontWeight: 700, color: C.brownDark },
-  headerSub: { fontSize: 9, color: C.brownLight, marginTop: 1 },
-  headerRight: { fontSize: 9, color: C.textMuted, textAlign: 'right' },
+  headerRight: {
+    fontSize: 8,
+    fontFamily: FONT,
+    color: C.textMuted,
+    textAlign: 'right',
+  },
 
-  // Pied de page
+  // Pied de page fixe
   footer: {
     position: 'absolute',
     bottom: 0,
@@ -66,33 +117,61 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 32,
-    paddingVertical: 10,
+    paddingHorizontal: 28,
+    paddingVertical: 9,
     borderTopWidth: 0.5,
     borderTopColor: C.beigeDark,
     backgroundColor: C.white,
   },
-  footerText: { fontSize: 7, color: C.textMuted, flex: 1 },
-  footerPage: { fontSize: 7, color: C.brownLight, fontWeight: 700 },
+  footerLeft: { fontSize: 7, fontFamily: FONT, color: C.textMuted, flex: 1 },
+  footerRight: { fontSize: 8, fontFamily: FONT_BOLD, color: C.brown },
 
   // ── Couverture ──────────────────────────────────────────────────────────
-  coverTopBand: {
+  coverBand: {
     backgroundColor: C.brownDark,
     paddingHorizontal: 32,
-    paddingTop: 28,
-    paddingBottom: 28,
+    paddingTop: 24,
+    paddingBottom: 24,
   },
-  coverLogo: { fontSize: 22, fontWeight: 700, color: C.white, letterSpacing: 1 },
-  coverTagline: { fontSize: 9, color: C.beige, marginTop: 3 },
+  coverTagline: {
+    fontSize: 8,
+    fontFamily: FONT,
+    color: C.beigeDark,
+    marginTop: 5,
+    letterSpacing: 0.2,
+  },
 
-  coverBody: { paddingHorizontal: 32, paddingTop: 22, paddingBottom: 60 },
+  coverBody: {
+    paddingHorizontal: 32,
+    paddingTop: 26,
+    paddingBottom: 80,
+  },
 
-  coverIntro: { fontSize: 9, color: C.brownLight, fontWeight: 700, marginBottom: 4, letterSpacing: 0.5 },
-  coverName: { fontSize: 28, fontWeight: 700, color: C.brownDark, letterSpacing: -0.5, lineHeight: 1.15 },
-  coverEmail: { fontSize: 10, color: C.textMuted, marginTop: 5, marginBottom: 22 },
+  coverPretitle: {
+    fontSize: 8,
+    fontFamily: FONT_BOLD,
+    color: C.brownLight,
+    letterSpacing: 1.2,
+    marginBottom: 5,
+  },
+  coverTitle: {
+    fontSize: 30,
+    fontFamily: FONT_BOLD,
+    color: C.brownDark,
+    letterSpacing: -0.3,
+    lineHeight: 1.15,
+    marginBottom: 4,
+  },
+  coverMeta: {
+    fontSize: 9,
+    fontFamily: FONT,
+    color: C.textMuted,
+    marginBottom: 24,
+    lineHeight: 1.5,
+  },
 
-  // Tableau 3 colonnes récap
-  recapRow: { flexDirection: 'row', marginBottom: 24 },
+  // Cartes récap 3 colonnes
+  recapRow: { flexDirection: 'row', marginBottom: 16 },
   recapCard: {
     flex: 1,
     backgroundColor: C.beigeLight,
@@ -103,20 +182,88 @@ const s = StyleSheet.create({
     marginRight: 8,
   },
   recapCardLast: { marginRight: 0 },
-  recapLabel: { fontSize: 7, color: C.textMuted, fontWeight: 700, letterSpacing: 0.5, marginBottom: 4 },
-  recapValue: { fontSize: 14, fontWeight: 700, color: C.brownDark, lineHeight: 1.2 },
-  recapSub: { fontSize: 8, color: C.textMuted, marginTop: 2 },
+  recapLabel: {
+    fontSize: 6.5,
+    fontFamily: FONT_BOLD,
+    color: C.textMuted,
+    letterSpacing: 0.8,
+    marginBottom: 6,
+  },
+  recapValue: {
+    fontSize: 15,
+    fontFamily: FONT_BOLD,
+    color: C.brownDark,
+    lineHeight: 1.2,
+    marginBottom: 3,
+  },
+  recapSub: {
+    fontSize: 8,
+    fontFamily: FONT,
+    color: C.textMuted,
+  },
+
+  // Loyer max recommandé
+  loyerBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: C.beigeLight,
+    borderRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: C.brown,
+    paddingLeft: 14,
+    paddingRight: 14,
+    paddingVertical: 11,
+    marginBottom: 22,
+  },
+  loyerLeft: { flex: 1 },
+  loyerLabel: {
+    fontSize: 7,
+    fontFamily: FONT_BOLD,
+    color: C.textMuted,
+    letterSpacing: 0.7,
+    marginBottom: 3,
+  },
+  loyerAmount: {
+    fontSize: 22,
+    fontFamily: FONT_BOLD,
+    color: C.brownDark,
+    lineHeight: 1.1,
+  },
+  loyerSub: {
+    fontSize: 7.5,
+    fontFamily: FONT,
+    color: C.textMuted,
+    marginTop: 2,
+  },
+  loyerBadge: {
+    backgroundColor: C.beige,
+    borderRadius: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  loyerBadgeText: {
+    fontSize: 8,
+    fontFamily: FONT_BOLD,
+    color: C.brown,
+  },
 
   // Table des matières
+  tocHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
   tocTitle: {
-    fontSize: 9,
-    fontWeight: 700,
-    color: C.brown,
-    letterSpacing: 0.5,
-    marginBottom: 8,
-    paddingBottom: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: C.beigeDark,
+    fontSize: 7.5,
+    fontFamily: FONT_BOLD,
+    color: C.brownMid,
+    letterSpacing: 0.8,
+  },
+  tocRule: {
+    flex: 1,
+    height: 0.5,
+    backgroundColor: C.beigeDark,
+    marginLeft: 8,
   },
   tocRow: {
     flexDirection: 'row',
@@ -126,85 +273,72 @@ const s = StyleSheet.create({
     borderBottomWidth: 0.5,
     borderBottomColor: C.beigeLight,
   },
-  tocLeft: { flexDirection: 'row', alignItems: 'center' },
-  tocBadge: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: C.beige,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 8,
+  tocLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  tocDot: { width: 6, height: 6, borderRadius: 3, marginRight: 8 },
+  tocLabel: { fontSize: 9, fontFamily: FONT, color: C.textDark, flex: 1 },
+  tocPage: {
+    fontSize: 8,
+    fontFamily: FONT_BOLD,
+    color: C.brownMid,
+    marginLeft: 8,
   },
-  tocBadgeText: { fontSize: 7, fontWeight: 700, color: C.brown },
-  tocLabel: { fontSize: 9, color: C.textMuted },
-  tocStatus: { flexDirection: 'row', alignItems: 'center' },
-  tocDot: { width: 5, height: 5, borderRadius: 3, marginRight: 4 },
-  tocStatusText: { fontSize: 8, fontWeight: 700 },
-  tocDate: { fontSize: 9, color: C.textMuted, textAlign: 'right', marginTop: 14 },
-  tocPage: { fontSize: 9, fontWeight: 700, color: C.brownMid },
 
-  // Loyer max callout
-  loyerBand: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: C.beigeLight,
-    borderRadius: 8,
-    borderLeftWidth: 3,
-    borderLeftColor: C.brownMid,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginBottom: 18,
-  },
-  loyerBandLeft: { flexDirection: 'column' },
-  loyerLabel: { fontSize: 7, fontWeight: 700, color: C.textMuted, letterSpacing: 0.5, marginBottom: 2 },
-  loyerValue: { fontSize: 20, fontWeight: 700, color: C.brownDark },
-  loyerSub: { fontSize: 8, color: C.textMuted, marginTop: 2 },
-  loyerBadge: {
-    backgroundColor: C.beige,
-    borderRadius: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  loyerBadgeText: { fontSize: 8, fontWeight: 700, color: C.brown },
-
-  coverLegal: {
-    fontSize: 7,
-    color: C.textMuted,
-    textAlign: 'center',
-    paddingHorizontal: 32,
-    paddingVertical: 10,
-    borderTopWidth: 0.5,
-    borderTopColor: C.beigeDark,
+  // Pied de page couverture
+  coverFooter: {
     position: 'absolute',
-    bottom: 30,
+    bottom: 24,
     left: 0,
     right: 0,
+    paddingHorizontal: 32,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  coverFooterText: {
+    fontSize: 7,
+    fontFamily: FONT,
+    color: C.textMuted,
+    flex: 1,
+  },
+  coverFooterRef: {
+    fontSize: 7,
+    fontFamily: FONT_BOLD,
+    color: C.brownLight,
+    marginLeft: 12,
   },
 
-  // ── Page de section ─────────────────────────────────────────────────────
-  sectionBand: {
+  // ── Bandeau de section (pages document) ─────────────────────────────────
+  sectionBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 32,
-    paddingVertical: 14,
     backgroundColor: C.beige,
-    borderBottomWidth: 2,
+    paddingHorizontal: 28,
+    paddingVertical: 13,
+    borderBottomWidth: 1,
     borderBottomColor: C.beigeDark,
+    marginBottom: 22,
   },
   sectionAccent: {
     width: 3,
-    height: 20,
+    height: 26,
     backgroundColor: C.brownMid,
     borderRadius: 2,
     marginRight: 10,
   },
-  sectionTitle: { fontSize: 13, fontWeight: 700, color: C.brownDark },
-  sectionName: { fontSize: 9, color: C.brownLight, marginTop: 2 },
+  sectionTitle: {
+    fontSize: 13,
+    fontFamily: FONT_BOLD,
+    color: C.brownDark,
+    marginBottom: 2,
+  },
+  sectionSubtitle: {
+    fontSize: 8,
+    fontFamily: FONT,
+    color: C.brownLight,
+  },
 
-  // Image document
-  docBody: { paddingHorizontal: 32, paddingTop: 20, paddingBottom: 70 },
+  // Corps document
+  docBody: { paddingHorizontal: 28, paddingBottom: 72 },
   docImage: {
     width: '100%',
     borderRadius: 6,
@@ -214,56 +348,26 @@ const s = StyleSheet.create({
   },
   docPlaceholder: {
     width: '100%',
-    height: 360,
+    height: 340,
     backgroundColor: C.beigeLight,
-    borderWidth: 2,
+    borderWidth: 1.5,
     borderColor: C.beigeDark,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  docPlaceholderText: { fontSize: 12, fontWeight: 700, color: C.brownMid, marginTop: 12 },
-  docPlaceholderSub: { fontSize: 9, color: C.textMuted, marginTop: 4 },
-
-  // ── Mot du locataire ────────────────────────────────────────────────────
-  motBody: { paddingHorizontal: 32, paddingTop: 24, paddingBottom: 70 },
-  motCard: {
-    backgroundColor: C.beigeLight,
-    borderWidth: 1,
-    borderColor: C.beigeDark,
-    borderRadius: 10,
-    padding: 24,
+  docPlaceholderTitle: {
+    fontSize: 11,
+    fontFamily: FONT_BOLD,
+    color: C.brownMid,
+    marginTop: 8,
+    marginBottom: 4,
   },
-  motQuote: {
-    fontSize: 36,
-    color: C.beigeDark,
-    lineHeight: 0.8,
-    marginBottom: 8,
+  docPlaceholderSub: {
+    fontSize: 8,
+    fontFamily: FONT,
+    color: C.textMuted,
   },
-  motText: {
-    fontSize: 12,
-    color: C.brownDark,
-    lineHeight: 1.7,
-  },
-  motDivider: {
-    height: 1,
-    backgroundColor: C.beigeDark,
-    marginTop: 16,
-    marginBottom: 12,
-  },
-  motAvatar: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: C.brown,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  motAvatarText: { fontSize: 12, fontWeight: 700, color: C.beigeLight },
-  motSignature: { flexDirection: 'row', alignItems: 'center' },
-  motSigName: { fontSize: 12, fontWeight: 700, color: C.brownDark },
-  motSigRole: { fontSize: 9, color: C.textMuted, marginTop: 2 },
 })
 
 // ── Composants internes ───────────────────────────────────────────────────
@@ -279,13 +383,15 @@ function PageHeader({
 }) {
   return (
     <View style={s.header}>
-      <View style={s.headerLeft}>
-        <Text style={s.headerLogo}>Drify</Text>
-        <Text style={s.headerSub}>
-          {prenom} {nom}
-        </Text>
-      </View>
-      <Text style={s.headerRight}>{section}</Text>
+      <DrifyLogo
+        fill={C.brownDark}
+        door={C.beigeLight}
+        markSize={18}
+        fontSize={13}
+      />
+      <Text style={s.headerRight}>
+        {prenom} {nom} · {section}
+      </Text>
     </View>
   )
 }
@@ -301,11 +407,10 @@ function PageFooter({
 }) {
   return (
     <View style={s.footer} fixed>
-      <Text style={s.footerText}>
-        Dossier généré par Drify · drify.fr · Réf. {reference} · Le service fourni par
-        Drify ne constitue pas une garantie sur les dossiers.
+      <Text style={s.footerLeft}>
+        Drify · drify.fr · Réf. {reference} · Ce dossier ne constitue pas une garantie locative.
       </Text>
-      <Text style={s.footerPage}>
+      <Text style={s.footerRight}>
         {current} / {total}
       </Text>
     </View>
@@ -324,17 +429,17 @@ function DocPage({
   totalPages: number
 }) {
   const { prenom, nom } = data.candidat
-  const imgSrc = doc.data_url && doc.data_url.startsWith('data:') ? doc.data_url : undefined
+  const imgSrc = doc.data_url?.startsWith('data:') ? doc.data_url : undefined
 
   return (
     <Page size="A4" style={s.page}>
       <PageHeader prenom={prenom} nom={nom} section={doc.label} />
 
-      <View style={s.sectionBand}>
+      <View style={s.sectionBanner}>
         <View style={s.sectionAccent} />
         <View>
           <Text style={s.sectionTitle}>{doc.label}</Text>
-          <Text style={s.sectionName}>
+          <Text style={s.sectionSubtitle}>
             {prenom} {nom}
           </Text>
         </View>
@@ -345,12 +450,12 @@ function DocPage({
           <Image src={imgSrc} style={s.docImage} />
         ) : doc.statut === 'verifie' ? (
           <View style={s.docPlaceholder}>
-            <Text style={s.docPlaceholderText}>Impossible d'afficher ce document</Text>
-            <Text style={s.docPlaceholderSub}>Vérifiez le format du fichier (JPG ou PNG requis)</Text>
+            <Text style={s.docPlaceholderTitle}>Impossible d'afficher ce document</Text>
+            <Text style={s.docPlaceholderSub}>Format non supporté (JPG ou PNG requis)</Text>
           </View>
         ) : (
           <View style={s.docPlaceholder}>
-            <Text style={s.docPlaceholderText}>Document non fourni</Text>
+            <Text style={s.docPlaceholderTitle}>Document non fourni</Text>
             <Text style={s.docPlaceholderSub}>{doc.label}</Text>
           </View>
         )}
@@ -363,30 +468,20 @@ function DocPage({
 
 // ── Document principal ────────────────────────────────────────────────────
 
-interface DossierPDFProps {
-  data: DossierTemplateData
-}
-
-export function DossierPDF({ data }: DossierPDFProps) {
+export function DossierPDF({ data }: { data: DossierTemplateData }) {
   const { candidat, dossier, documents } = data
   const { prenom, nom } = candidat
 
-  const formatMoney = (r: number): string => {
-    const str = Math.round(r).toString()
-    return str.replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' €'
-  }
-
-  const formatRevenu = (r: number) => r ? formatMoney(r) : '—'
+  const formatMoney = (n: number): string =>
+    Math.round(n)
+      .toString()
+      .replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' €'
 
   const loyerMax = candidat.revenus_mensuels_nets
     ? formatMoney(Math.round(candidat.revenus_mensuels_nets / 3))
-    : '—'
+    : null
 
-  const docsFournis = documents.filter((d) => d.statut === 'verifie')
-  const totalPages = 1 + documents.length // couverture + 1 page par document
-
-  const initials =
-    (prenom.charAt(0) + nom.charAt(0)).toUpperCase()
+  const totalPages = 1 + documents.length
 
   return (
     <Document
@@ -394,31 +489,43 @@ export function DossierPDF({ data }: DossierPDFProps) {
       author="Drify"
       subject="Dossier locataire"
     >
-      {/* ═══════════════════════ PAGE 1 — COUVERTURE ═══════════════════════ */}
+      {/* ════════════════ PAGE 1 — COUVERTURE ════════════════ */}
       <Page size="A4" style={s.page}>
-        {/* Bande sombre logo */}
-        <View style={s.coverTopBand}>
-          <Text style={s.coverLogo}>Drify</Text>
+        {/* Bande de marque */}
+        <View style={s.coverBand}>
+          <DrifyLogo
+            fill={C.white}
+            door={C.brownDark}
+            markSize={28}
+            fontSize={21}
+          />
           <Text style={s.coverTagline}>La plateforme de location de confiance</Text>
         </View>
 
         <View style={s.coverBody}>
-          <Text style={s.coverIntro}>LE DOSSIER DE LOCATION DE</Text>
-          <Text style={s.coverName}>
+          <Text style={s.coverPretitle}>LE DOSSIER DE LOCATION DE</Text>
+          <Text style={s.coverTitle}>
             {prenom} {nom.toUpperCase()}
           </Text>
-          <Text style={s.coverEmail}>{candidat.email}</Text>
+          <Text style={s.coverMeta}>
+            {candidat.email}
+            {candidat.adresse_actuelle ? `  ·  ${candidat.adresse_actuelle}` : ''}
+          </Text>
 
           {/* Récap 3 colonnes */}
           <View style={s.recapRow}>
             <View style={s.recapCard}>
               <Text style={s.recapLabel}>TYPE DE DOSSIER</Text>
-              <Text style={s.recapValue}>Dossier seul</Text>
+              <Text style={s.recapValue}>Seul</Text>
               <Text style={s.recapSub}>{candidat.situation_professionnelle || '—'}</Text>
             </View>
             <View style={s.recapCard}>
-              <Text style={s.recapLabel}>REVENUS MENSUELS NETS</Text>
-              <Text style={s.recapValue}>{formatRevenu(candidat.revenus_mensuels_nets)}</Text>
+              <Text style={s.recapLabel}>REVENUS MENSUELS</Text>
+              <Text style={s.recapValue}>
+                {candidat.revenus_mensuels_nets
+                  ? formatMoney(candidat.revenus_mensuels_nets)
+                  : '—'}
+              </Text>
               <Text style={s.recapSub}>nets / mois</Text>
             </View>
             <View style={[s.recapCard, s.recapCardLast]}>
@@ -427,13 +534,13 @@ export function DossierPDF({ data }: DossierPDFProps) {
             </View>
           </View>
 
-          {/* Loyer maximum recommandé */}
-          {candidat.revenus_mensuels_nets > 0 && (
-            <View style={s.loyerBand}>
-              <View style={s.loyerBandLeft}>
+          {/* Loyer max recommandé */}
+          {loyerMax && (
+            <View style={s.loyerBox}>
+              <View style={s.loyerLeft}>
                 <Text style={s.loyerLabel}>LOYER MAXIMUM RECOMMANDÉ</Text>
-                <Text style={s.loyerValue}>{loyerMax} / mois</Text>
-                <Text style={s.loyerSub}>Taux d'effort 33% — revenus nets ÷ 3</Text>
+                <Text style={s.loyerAmount}>{loyerMax} / mois</Text>
+                <Text style={s.loyerSub}>Taux d'effort 33 % — revenus nets ÷ 3</Text>
               </View>
               <View style={s.loyerBadge}>
                 <Text style={s.loyerBadgeText}>Règle 1/3</Text>
@@ -442,9 +549,10 @@ export function DossierPDF({ data }: DossierPDFProps) {
           )}
 
           {/* Table des matières */}
-          <Text style={s.tocTitle}>
-            LES PIÈCES JUSTIFICATIVES DE {prenom.toUpperCase()} {nom.toUpperCase()} · {candidat.email}
-          </Text>
+          <View style={s.tocHeader}>
+            <Text style={s.tocTitle}>PIÈCES JUSTIFICATIVES</Text>
+            <View style={s.tocRule} />
+          </View>
 
           {documents.map((doc, i) => {
             const fourni = doc.statut === 'verifie'
@@ -454,7 +562,7 @@ export function DossierPDF({ data }: DossierPDFProps) {
                   <View
                     style={[
                       s.tocDot,
-                      { backgroundColor: fourni ? C.success : C.brownLight, marginRight: 8 },
+                      { backgroundColor: fourni ? C.success : C.beigeDark },
                     ]}
                   />
                   <Text style={s.tocLabel}>{doc.label}</Text>
@@ -463,17 +571,20 @@ export function DossierPDF({ data }: DossierPDFProps) {
               </View>
             )
           })}
-
-          <Text style={s.tocDate}>Généré le {dossier.date_generation}</Text>
         </View>
 
-        <Text style={s.coverLegal}>
-          Réf. {dossier.reference} · Généré le {dossier.date_generation} · Le service
-          fourni par Drify ne constitue pas une garantie sur les dossiers.
-        </Text>
+        {/* Pied de page couverture */}
+        <View style={s.coverFooter}>
+          <Text style={s.coverFooterText}>
+            Le service fourni par Drify ne constitue pas une garantie sur les dossiers.
+          </Text>
+          <Text style={s.coverFooterRef}>
+            Réf. {dossier.reference} · {dossier.date_generation}
+          </Text>
+        </View>
       </Page>
 
-      {/* ══════════════════ PAGES DOCUMENTS ══════════════════════════════ */}
+      {/* ════════════════ PAGES DOCUMENTS ════════════════ */}
       {documents.map((doc, i) => (
         <DocPage
           key={`doc-${i}`}
