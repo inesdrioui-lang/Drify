@@ -1,10 +1,57 @@
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
-import { useEffect } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 
 export default function AnnoncePage() {
+  const router = useRouter()
+  const [showContactGate, setShowContactGate] = useState(false)
+  const [contactLoading, setContactLoading] = useState(false)
+
+  async function handleContact() {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      setShowContactGate(true)
+      return
+    }
+    setContactLoading(true)
+
+    // Chercher une conversation existante pour éviter les doublons
+    const { data: existing } = await supabase
+      .from('conversations')
+      .select('id')
+      .eq('tenant_id', user.id)
+      .eq('property_title', 'T3 briques roses — Capitole')
+      .maybeSingle()
+
+    if (existing) {
+      router.push(`/messages?conv=${existing.id}`)
+      return
+    }
+
+    // Créer la conversation
+    const { data: conv } = await supabase
+      .from('conversations')
+      .insert({
+        tenant_id: user.id,
+        other_user_name: 'Pierre Dupont',
+        other_user_initials: 'PD',
+        property_title: 'T3 briques roses — Capitole',
+        property_info: '850 €/mois · 65 m² · Toulouse',
+      })
+      .select()
+      .single()
+
+    if (conv) {
+      router.push(`/messages?conv=${conv.id}`)
+    } else {
+      setContactLoading(false)
+    }
+  }
+
   useEffect(() => {
     // Load Leaflet for map
     if (typeof window === 'undefined') return
@@ -138,8 +185,42 @@ export default function AnnoncePage() {
           .listing-title { font-size: 22px; }
           .meta-grid { grid-template-columns: 1fr 1fr; }
         }
+        .gate-overlay { position: fixed; inset: 0; z-index: 1000; background: rgba(20,10,5,.5); display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .gate-modal { background: #FDFCFA; border-radius: 20px; padding: 40px 36px 36px; width: min(440px, 100%); text-align: center; box-shadow: 0 24px 64px rgba(0,0,0,.16); }
+        .gate-modal-icon { width: 52px; height: 52px; border-radius: 14px; background: #F7F3EE; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; }
+        .gate-modal h2 { font-size: 22px; font-weight: 800; letter-spacing: -.5px; color: #3D2E22; margin-bottom: 10px; }
+        .gate-modal p { font-size: 14px; color: #8A7068; line-height: 1.65; margin-bottom: 28px; max-width: 300px; margin-left: auto; margin-right: auto; }
+        .gate-btn { display: block; width: 100%; background: #3D2E22; color: #fff; border: none; border-radius: 12px; padding: 14px 24px; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; margin-bottom: 12px; transition: opacity .15s; font-family: inherit; }
+        .gate-btn:hover { opacity: .85; }
+        .gate-link { display: block; font-size: 13px; color: #8A7068; text-decoration: none; }
+        .gate-link span { font-weight: 600; color: #5C4433; }
+        .gate-link:hover span { text-decoration: underline; }
+        .gate-close { position: absolute; top: 14px; right: 14px; width: 30px; height: 30px; border-radius: 8px; border: 1px solid #EAE3DA; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #8A7068; font-family: inherit; }
+        .gate-close:hover { background: #F7F3EE; }
       `}</style>
 
+      {showContactGate && (
+        <div className="gate-overlay" onClick={e => { if (e.target === e.currentTarget) setShowContactGate(false) }}>
+          <div className="gate-modal" style={{position:'relative'}}>
+            <button className="gate-close" onClick={() => setShowContactGate(false)} aria-label="Fermer">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+            <div className="gate-modal-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3D2E22" strokeWidth="1.7">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+            </div>
+            <h2>Contacter le propriétaire</h2>
+            <p>Connectez-vous pour envoyer un message à Pierre Dupont à propos de ce logement.</p>
+            <Link href="/connexion?redirect=/annonce" className="gate-btn">Se connecter</Link>
+            <Link href="/inscription?redirect=/annonce" className="gate-link">
+              Pas encore de compte ?&nbsp;<span>Créer un compte</span>
+            </Link>
+          </div>
+        </div>
+      )}
 
       <div className="breadcrumb">
         <Link href="/recherche">Recherche</Link>
@@ -257,7 +338,13 @@ export default function AnnoncePage() {
               <div className="price-detail"><span>Charges</span><span>60 €</span></div>
               <div className="price-detail"><span>Dépôt de garantie</span><span>850 €</span></div>
               <div style={{marginTop:'20px'}}>
-                <button className="cta-btn cta-primary">Contacter le propriétaire</button>
+                <button
+                  className="cta-btn cta-primary"
+                  onClick={handleContact}
+                  disabled={contactLoading}
+                >
+                  {contactLoading ? 'Chargement…' : 'Contacter le propriétaire'}
+                </button>
                 <button className="cta-btn cta-secondary">Postuler avec mon dossier</button>
               </div>
               <div className="sidebar-info">
