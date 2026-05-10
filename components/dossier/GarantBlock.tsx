@@ -115,9 +115,8 @@ export default function GarantBlock({
   const [situationPro, setSituationPro] = useState(initialGarant?.situation_pro ?? 'salarie_cdi')
   const [revenus, setRevenus] = useState<number>(initialGarant?.revenus_mensuels ?? 0)
 
-  // Extended local fields (not in Supabase schema yet)
-  const [dateNaissance, setDateNaissance] = useState('')
-  const [adresse, setAdresse] = useState('')
+  const [dateNaissance, setDateNaissance] = useState(initialGarant?.date_naissance ?? '')
+  const [adresse, setAdresse] = useState(initialGarant?.adresse ?? '')
 
   // Subfields (local)
   const [periodeEssai, setPeriodeEssai] = useState<'oui' | 'non' | ''>('')
@@ -160,7 +159,10 @@ export default function GarantBlock({
     setSaveError('')
     const data: GarantData = {
       id: garantDbId || undefined,
-      prenom, nom, email, telephone, lien,
+      prenom, nom, email, telephone,
+      date_naissance: dateNaissance || undefined,
+      adresse: adresse || undefined,
+      lien,
       situation_pro: situationPro,
       revenus_mensuels: revenus,
       ordre,

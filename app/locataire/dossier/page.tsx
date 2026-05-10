@@ -32,7 +32,7 @@ export default async function DossierPage() {
   let garants: GarantWithId[] = []
   const { data: garantsData } = await supabase
     .from('garants')
-    .select('id, prenom, nom, email, telephone, lien, situation_pro, revenus_mensuels, ordre')
+    .select('id, prenom, nom, email, telephone, date_naissance, adresse, lien, situation_pro, revenus_mensuels, ordre')
     .eq('user_id', user.id)
     .order('ordre', { ascending: true })
   if (garantsData) garants = garantsData as GarantWithId[]

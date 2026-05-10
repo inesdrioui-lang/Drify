@@ -23,6 +23,8 @@ export interface GarantData {
   nom: string
   email?: string
   telephone?: string
+  date_naissance?: string
+  adresse?: string
   lien: string
   situation_pro: string
   revenus_mensuels: number
