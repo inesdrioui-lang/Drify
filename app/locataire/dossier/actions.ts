@@ -19,13 +19,16 @@ export interface TenantProfileData {
 
 export interface GarantData {
   id?: string
+  type_garant?: 'physique' | 'organisme'
   prenom: string
   nom: string
+  nationalite?: string
   email?: string
   telephone?: string
   date_naissance?: string
   adresse?: string
-  lien: string
+  lien?: string
+  type_revenus?: string
   situation_pro: string
   revenus_mensuels: number
   ordre: 1 | 2
