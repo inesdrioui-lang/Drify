@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { renderToBuffer } from '@react-pdf/renderer';
 import React from 'react';
 import { DossierPDF } from '@/lib/pdf/DossierPDF';
-import { DossierTemplateData, DocumentType, DOCUMENT_SORT_ORDER, getHumanDocTitle } from '@/lib/pdf/dossier-template';
+import { DossierTemplateData, DocumentType, DOCUMENT_SORT_ORDER, getHumanDocTitle, getExpectedDocTypes } from '@/lib/pdf/dossier-template';
 import { randomBytes } from 'crypto';
 
 export const maxDuration = 60;
@@ -81,10 +81,12 @@ export async function POST(request: Request) {
       adresse_actuelle: clientProfile.adresse_actuelle  ?? profil.adresse_actuelle,
     }
 
+    // Documents du locataire uniquement (exclure docs de garants)
     const { data: documents } = await supabase
       .from('documents')
       .select('*')
-      .eq('user_id', user.id);
+      .eq('user_id', user.id)
+      .is('garant_id', null);
 
     const { data: garantsData } = await supabase
       .from('garants')
@@ -93,34 +95,39 @@ export async function POST(request: Request) {
     const garantCount = garantsData?.length ?? 0;
     const garantLabel = garantCount === 0 ? 'Aucun' : garantCount === 1 ? '1 garant' : `${garantCount} garants`;
 
-    const sortedDocuments = (documents || []).sort((a, b) => {
-      const orderA = DOCUMENT_SORT_ORDER[a.categorie ?? 'autre'] ?? 9;
-      const orderB = DOCUMENT_SORT_ORDER[b.categorie ?? 'autre'] ?? 9;
-      return orderA - orderB;
-    });
-
     const prenom = normalizeName(mergedProfil.prenom);
 
+    // Types attendus selon le statut actuel — écarte les docs d'un statut précédent
+    const expectedTypes = getExpectedDocTypes(mergedProfil.situation_pro);
+
+    const sortedDocuments = (documents || [])
+      .filter(doc => !!doc.fichier_path && expectedTypes.includes(doc.categorie ?? ''))
+      .sort((a, b) => {
+        const orderA = DOCUMENT_SORT_ORDER[a.categorie ?? 'autre'] ?? 9;
+        const orderB = DOCUMENT_SORT_ORDER[b.categorie ?? 'autre'] ?? 9;
+        return orderA - orderB;
+      });
+
+    // Compter les occurrences par type pour numéroter (ex : bulletin n°1, n°2)
     const typeCountMap: Record<string, number> = {};
     for (const doc of sortedDocuments) {
       const t = doc.categorie ?? 'autre';
       typeCountMap[t] = (typeCountMap[t] ?? 0) + 1;
     }
-    const typeSeqMap: Record<string, number> = {};
 
-    const docsWithUrls = await Promise.all(
+    const typeSeqMap: Record<string, number> = {};
+    const allDocsWithUrls = await Promise.all(
       sortedDocuments.map(async (doc) => {
-        let signedUrl: string | undefined;
-        if (doc.fichier_path) {
-          const { data } = await supabase.storage
-            .from('dossier-documents')
-            .createSignedUrl(doc.fichier_path, 3600);
-          signedUrl = data?.signedUrl;
-        }
-        const statut: 'verifie' | 'non_fourni' = signedUrl ? 'verifie' : 'non_fourni';
         const docType = (doc.categorie ?? 'autre') as DocumentType;
         typeSeqMap[docType] = (typeSeqMap[docType] ?? 0) + 1;
         const idx = typeCountMap[docType] > 1 ? typeSeqMap[docType] : undefined;
+
+        const { data: signed } = await supabase.storage
+          .from('dossier-documents')
+          .createSignedUrl(doc.fichier_path, 3600);
+        const signedUrl = signed?.signedUrl;
+        const statut: 'verifie' | 'non_fourni' = signedUrl ? 'verifie' : 'non_fourni';
+
         return {
           type: docType,
           label: getHumanDocTitle(docType, prenom, idx),
@@ -130,6 +137,9 @@ export async function POST(request: Request) {
         };
       })
     );
+
+    // Ne conserver que les documents réellement accessibles — aucune page "non fourni"
+    const docsWithUrls = allDocsWithUrls.filter(d => d.statut === 'verifie');
 
     const reference = `DRF-${new Date().getFullYear()}-${randomBytes(4).toString('hex').toUpperCase()}`;
     const dateGeneration = new Date().toLocaleDateString('fr-FR', {

@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { renderToBuffer } from '@react-pdf/renderer';
 import React from 'react';
 import { DossierPDF } from '@/lib/pdf/DossierPDF';
-import { DossierTemplateData, DocumentType, DOCUMENT_LABELS, DOCUMENT_SORT_ORDER, getHumanDocTitle } from '@/lib/pdf/dossier-template';
+import { DossierTemplateData, DocumentType, DOCUMENT_LABELS, DOCUMENT_SORT_ORDER, getHumanDocTitle, getExpectedDocTypes } from '@/lib/pdf/dossier-template';
 import { randomBytes } from 'crypto';
 
 function normalizeName(s: string | null | undefined): string {
@@ -118,10 +118,12 @@ export async function POST(request: Request) {
       adresse_actuelle: clientProfile.adresse_actuelle  ?? profil.adresse_actuelle,
     }
 
+    // Documents du locataire uniquement (exclure docs de garants)
     const { data: documents } = await supabase
       .from('documents')
       .select('*')
-      .eq('user_id', user.id);
+      .eq('user_id', user.id)
+      .is('garant_id', null);
 
     const { data: garantsData } = await supabase
       .from('garants')
@@ -130,46 +132,49 @@ export async function POST(request: Request) {
     const garantCount = garantsData?.length ?? 0;
     const garantLabel = garantCount === 0 ? 'Aucun' : garantCount === 1 ? '1 garant' : `${garantCount} garants`;
 
-    const sortedDocuments = (documents || []).sort((a, b) => {
-      const orderA = DOCUMENT_SORT_ORDER[a.categorie ?? 'autre'] ?? 9;
-      const orderB = DOCUMENT_SORT_ORDER[b.categorie ?? 'autre'] ?? 9;
-      return orderA - orderB;
-    });
-
     const prenom = normalizeName(mergedProfil.prenom);
 
-    // Pré-compter les types pour numéroter les doublons (ex : bulletin n°1, n°2)
+    // Types attendus selon le statut actuel — écarte les docs d'un statut précédent
+    const expectedTypes = getExpectedDocTypes(mergedProfil.situation_pro);
+
+    const sortedDocuments = (documents || [])
+      .filter(doc => !!doc.fichier_path && expectedTypes.includes(doc.categorie ?? ''))
+      .sort((a, b) => {
+        const orderA = DOCUMENT_SORT_ORDER[a.categorie ?? 'autre'] ?? 9;
+        const orderB = DOCUMENT_SORT_ORDER[b.categorie ?? 'autre'] ?? 9;
+        return orderA - orderB;
+      });
+
+    // Compter les occurrences par type pour numéroter (ex : bulletin n°1, n°2)
     const typeCountMap: Record<string, number> = {};
     for (const doc of sortedDocuments) {
       const t = doc.categorie ?? 'autre';
       typeCountMap[t] = (typeCountMap[t] ?? 0) + 1;
     }
-    const typeSeqMap: Record<string, number> = {};
-    const docLabels = sortedDocuments.map((doc) => {
-      const docType = (doc.categorie ?? 'autre') as DocumentType;
-      typeSeqMap[docType] = (typeSeqMap[docType] ?? 0) + 1;
-      const idx = typeCountMap[docType] > 1 ? typeSeqMap[docType] : undefined;
-      return getHumanDocTitle(docType, prenom, idx);
-    });
 
-    const docsWithUrls = await Promise.all(
-      sortedDocuments.map(async (doc, i) => {
-        let dataUrl: string | undefined;
-        if (doc.fichier_path) {
-          const b64 = await getBase64FromStorage(supabase, doc.fichier_path);
-          if (b64) dataUrl = b64;
-        }
-        const statut: 'verifie' | 'non_fourni' = dataUrl ? 'verifie' : 'non_fourni';
+    const typeSeqMap: Record<string, number> = {};
+    const allDocsWithData = await Promise.all(
+      sortedDocuments.map(async (doc) => {
         const docType = (doc.categorie ?? 'autre') as DocumentType;
+        typeSeqMap[docType] = (typeSeqMap[docType] ?? 0) + 1;
+        const idx = typeCountMap[docType] > 1 ? typeSeqMap[docType] : undefined;
+
+        const b64 = await getBase64FromStorage(supabase, doc.fichier_path);
+        const dataUrl = b64 || undefined;
+        const statut: 'verifie' | 'non_fourni' = dataUrl ? 'verifie' : 'non_fourni';
+
         return {
           type: docType,
-          label: docLabels[i],
+          label: getHumanDocTitle(docType, prenom, idx),
           statut,
           data_url: dataUrl,
           mime_type: doc.mime_type as string | undefined,
         };
       })
     );
+
+    // Ne conserver que les documents réellement chargés — aucune page "non fourni"
+    const docsWithUrls = allDocsWithData.filter(d => d.statut === 'verifie');
 
     const reference = `DRF-${new Date().getFullYear()}-${randomBytes(4).toString('hex').toUpperCase()}`;
     const dateGeneration = new Date().toLocaleDateString('fr-FR', {

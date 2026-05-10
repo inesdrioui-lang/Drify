@@ -75,6 +75,27 @@ export const DOCUMENT_LABELS: Record<DocumentType, string> = {
   autre: 'Document complémentaire',
 }
 
+// Types de documents attendus selon la situation professionnelle
+export function getExpectedDocTypes(situationPro: string | null | undefined): string[] {
+  const base = ['identite', 'piece_identite', 'justificatif_domicile', 'avis_imposition']
+  switch (situationPro) {
+    case 'etudiant':
+      return [...base, 'certificat_scolarite', 'carte_etudiant', 'bourse']
+    case 'salarie_cdi':
+    case 'salarie_cdd':
+    case 'fonctionnaire':
+      return [...base, 'fiches_salaire', 'bulletin_salaire', 'contrat_travail']
+    case 'independant':
+      return [...base, 'kbis', 'statut_entreprise', 'bilans', 'bilan_comptable']
+    case 'retraite':
+      return [...base, 'pension']
+    case 'sans_emploi':
+      return [...base, 'allocations']
+    default:
+      return base
+  }
+}
+
 // Titre humain pour chaque type de pièce — jamais de nom de fichier brut
 export function getHumanDocTitle(
   type: DocumentType,
@@ -92,7 +113,7 @@ export function getHumanDocTitle(
     case 'bulletin_salaire':
       return `Le bulletin de salaire${n} de ${prenom}`
     case 'avis_imposition':
-      return `L'avis d'imposition de ${prenom}`
+      return `L'avis d'imposition${n} de ${prenom}`
     case 'contrat_travail':
       return `Le contrat de travail de ${prenom}`
     case 'quittance_loyer':
@@ -112,9 +133,9 @@ export function getHumanDocTitle(
     case 'carte_etudiant':
       return `La carte étudiante de ${prenom}`
     case 'bourse':
-      return `Le justificatif de bourse de ${prenom}`
+      return `L'attestation de bourse de ${prenom}`
     default:
-      return `Le document de ${prenom}`
+      return `Le justificatif de ressources de ${prenom}`
   }
 }
 
@@ -417,8 +438,8 @@ function buildDocPage(
 // ── Assemblage final ─────────────────────────────────────────────────────────
 
 export function generateDossierHTML(data: DossierTemplateData): string {
-  // Toutes les pages de documents (avec ou sans URL)
-  const docPages = data.documents
+  // Uniquement les documents réellement déposés — jamais de page "Document non fourni"
+  const docPages = data.documents.filter(d => d.statut === 'verifie')
 
   const totalPages = 1 + docPages.length  // couverture + une page par document
 
