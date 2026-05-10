@@ -103,9 +103,9 @@ interface GarantBlockProps {
 }
 
 function buildInitialForm(g?: GarantData & { id: string }): GarantFormData {
-  const isOrganisme = g?.type_garant === 'organisme'
+  const isOrganisme = g?.type_garant === 'organisme' || g?.lien === 'organisme'
   return {
-    typeGarant: g?.type_garant ?? 'physique',
+    typeGarant: isOrganisme ? 'organisme' : 'physique',
     nomOrganisme: isOrganisme ? (g?.nom ?? '') : '',
     prenom: isOrganisme ? '' : (g?.prenom ?? ''),
     nom: isOrganisme ? '' : (g?.nom ?? ''),
@@ -113,38 +113,36 @@ function buildInitialForm(g?: GarantData & { id: string }): GarantFormData {
     nationalite: g?.nationalite ?? '',
     telephone: g?.telephone ?? '',
     adresse: g?.adresse ?? '',
-    situationPro: g?.situation_pro ?? 'salarie_cdi',
+    situationPro: isOrganisme ? 'salarie_cdi' : (g?.situation_pro ?? 'salarie_cdi'),
     typeRevenus: g?.type_revenus ?? '',
     revenus: g?.revenus_mensuels ?? 0,
   }
 }
 
 function formToGarantData(f: GarantFormData, garantDbId: string, ordre: 1 | 2): GarantData {
+  // type_garant, nationalite, type_revenus sont envoyés uniquement si la migration 003 est exécutée.
+  // En attendant, le type est encodé dans le champ lien ('organisme' vs 'parent').
   if (f.typeGarant === 'organisme') {
     return {
       id: garantDbId || undefined,
-      type_garant: 'organisme',
       prenom: '',
       nom: f.nomOrganisme,
       telephone: f.telephone || undefined,
       adresse: f.adresse || undefined,
       lien: 'organisme',
-      situation_pro: 'organisme',
+      situation_pro: 'sans_emploi',
       revenus_mensuels: 0,
       ordre,
     }
   }
   return {
     id: garantDbId || undefined,
-    type_garant: 'physique',
     prenom: f.prenom,
     nom: f.nom,
-    nationalite: f.nationalite || undefined,
     date_naissance: f.dateNaissance || undefined,
     telephone: f.telephone || undefined,
     adresse: f.adresse || undefined,
     lien: 'parent',
-    type_revenus: f.typeRevenus || undefined,
     situation_pro: f.situationPro,
     revenus_mensuels: f.revenus,
     ordre,
