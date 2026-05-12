@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { renderToBuffer } from '@react-pdf/renderer';
 import React from 'react';
 import { DossierPDF } from '@/lib/pdf/DossierPDF';
-import { DossierTemplateData, DocumentType, DOCUMENT_SORT_ORDER, getHumanDocTitle, getExpectedDocTypes } from '@/lib/pdf/dossier-template';
+import { DossierTemplateData, GarantPDFData, DocumentType, DOCUMENT_SORT_ORDER, getHumanDocTitle } from '@/lib/pdf/dossier-template';
 import { randomBytes } from 'crypto';
 
 export const maxDuration = 60;
@@ -26,6 +26,39 @@ function mapSituationPro(raw: string | null | undefined): string {
 function normalizeName(s: string | null | undefined): string {
   if (!s) return ''
   return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()
+}
+
+function detectMimeType(path: string): string {
+  const ext = path.split('.').pop()?.toLowerCase()
+  const mimes: Record<string, string> = {
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    png: 'image/png',
+    webp: 'image/webp',
+  }
+  return mimes[ext ?? ''] ?? 'image/jpeg'
+}
+
+async function getBase64FromStorage(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  path: string
+): Promise<string> {
+  try {
+    const { data, error } = await supabase.storage
+      .from('dossier-documents')
+      .download(path)
+    if (error || !data) {
+      console.error(`[PDF Save] download error for ${path}:`, error)
+      return ''
+    }
+    const arrayBuffer = await data.arrayBuffer()
+    const base64 = Buffer.from(arrayBuffer).toString('base64')
+    const mimeType = data.type || detectMimeType(path)
+    return `data:${mimeType};base64,${base64}`
+  } catch (err) {
+    console.error(`[PDF Save] base64 conversion error for ${path}:`, err)
+    return ''
+  }
 }
 
 interface ClientProfileOverride {
@@ -88,20 +121,21 @@ export async function POST(request: Request) {
       .eq('user_id', user.id)
       .is('garant_id', null);
 
-    const { data: garantsData } = await supabase
+    // Garants complets + leurs documents
+    const { data: garantsRaw } = await supabase
       .from('garants')
-      .select('id')
-      .eq('user_id', user.id);
-    const garantCount = garantsData?.length ?? 0;
+      .select('id, prenom, nom, lien, situation_pro, revenus_mensuels')
+      .eq('user_id', user.id)
+      .order('ordre', { ascending: true });
+
+    const garantCount = garantsRaw?.length ?? 0;
     const garantLabel = garantCount === 0 ? 'Aucun' : garantCount === 1 ? '1 garant' : `${garantCount} garants`;
 
     const prenom = normalizeName(mergedProfil.prenom);
 
-    // Types attendus selon le statut actuel — écarte les docs d'un statut précédent
-    const expectedTypes = getExpectedDocTypes(mergedProfil.situation_pro);
-
+    // Tous les documents uploadés — aucun filtre par type pour ne jamais en exclure
     const sortedDocuments = (documents || [])
-      .filter(doc => !!doc.fichier_path && expectedTypes.includes(doc.categorie ?? ''))
+      .filter(doc => !!doc.fichier_path)
       .sort((a, b) => {
         const orderA = DOCUMENT_SORT_ORDER[a.categorie ?? 'autre'] ?? 9;
         const orderB = DOCUMENT_SORT_ORDER[b.categorie ?? 'autre'] ?? 9;
@@ -116,30 +150,84 @@ export async function POST(request: Request) {
     }
 
     const typeSeqMap: Record<string, number> = {};
-    const allDocsWithUrls = await Promise.all(
+    const allDocsWithData = await Promise.all(
       sortedDocuments.map(async (doc) => {
         const docType = (doc.categorie ?? 'autre') as DocumentType;
         typeSeqMap[docType] = (typeSeqMap[docType] ?? 0) + 1;
         const idx = typeCountMap[docType] > 1 ? typeSeqMap[docType] : undefined;
 
-        const { data: signed } = await supabase.storage
-          .from('dossier-documents')
-          .createSignedUrl(doc.fichier_path, 3600);
-        const signedUrl = signed?.signedUrl;
-        const statut: 'verifie' | 'non_fourni' = signedUrl ? 'verifie' : 'non_fourni';
+        const b64 = await getBase64FromStorage(supabase, doc.fichier_path);
+        const dataUrl = b64 || undefined;
+        const statut: 'verifie' | 'non_fourni' = dataUrl ? 'verifie' : 'non_fourni';
 
         return {
           type: docType,
           label: getHumanDocTitle(docType, prenom, idx),
           statut,
-          url: signedUrl,
+          data_url: dataUrl,
           mime_type: doc.mime_type as string | undefined,
         };
       })
     );
 
-    // Ne conserver que les documents réellement accessibles — aucune page "non fourni"
-    const docsWithUrls = allDocsWithUrls.filter(d => d.statut === 'verifie');
+    const docsWithUrls = allDocsWithData.filter(d => d.statut === 'verifie');
+
+    // Garants + leurs documents (même logique que generate/route.ts)
+    const garantsPDF: GarantPDFData[] = await Promise.all(
+      (garantsRaw ?? []).map(async (garant) => {
+        const garantPrenom = normalizeName(garant.prenom);
+
+        const { data: garantDocs } = await supabase
+          .from('documents')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('garant_id', garant.id);
+
+        const sortedGarantDocs = (garantDocs || [])
+          .filter(doc => !!doc.fichier_path)
+          .sort((a, b) => {
+            const orderA = DOCUMENT_SORT_ORDER[a.categorie ?? 'autre'] ?? 9;
+            const orderB = DOCUMENT_SORT_ORDER[b.categorie ?? 'autre'] ?? 9;
+            return orderA - orderB;
+          });
+
+        const gTypeCountMap: Record<string, number> = {};
+        for (const doc of sortedGarantDocs) {
+          const t = doc.categorie ?? 'autre';
+          gTypeCountMap[t] = (gTypeCountMap[t] ?? 0) + 1;
+        }
+
+        const gTypeSeqMap: Record<string, number> = {};
+        const garantDocsWithData = await Promise.all(
+          sortedGarantDocs.map(async (doc) => {
+            const docType = (doc.categorie ?? 'autre') as DocumentType;
+            gTypeSeqMap[docType] = (gTypeSeqMap[docType] ?? 0) + 1;
+            const idx = gTypeCountMap[docType] > 1 ? gTypeSeqMap[docType] : undefined;
+
+            const b64 = await getBase64FromStorage(supabase, doc.fichier_path);
+            const dataUrl = b64 || undefined;
+            const statut: 'verifie' | 'non_fourni' = dataUrl ? 'verifie' : 'non_fourni';
+
+            return {
+              type: docType,
+              label: getHumanDocTitle(docType, garantPrenom, idx),
+              statut,
+              data_url: dataUrl,
+              mime_type: doc.mime_type as string | undefined,
+            };
+          })
+        );
+
+        return {
+          prenom: garantPrenom,
+          nom: garant.nom ?? '',
+          lien: garant.lien ?? undefined,
+          situation_professionnelle: mapSituationPro(garant.situation_pro),
+          revenus_mensuels_nets: garant.revenus_mensuels ?? 0,
+          documents: garantDocsWithData.filter(d => d.statut === 'verifie'),
+        };
+      })
+    );
 
     const reference = `DRF-${new Date().getFullYear()}-${randomBytes(4).toString('hex').toUpperCase()}`;
     const dateGeneration = new Date().toLocaleDateString('fr-FR', {
@@ -169,6 +257,7 @@ export async function POST(request: Request) {
         score_confiance: profil.score_confiance ?? undefined,
       },
       documents: docsWithUrls,
+      garants: garantsPDF.length > 0 ? garantsPDF : undefined,
     };
 
     const pdfBuffer = await renderToBuffer(

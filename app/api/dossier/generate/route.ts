@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { renderToBuffer } from '@react-pdf/renderer';
 import React from 'react';
 import { DossierPDF } from '@/lib/pdf/DossierPDF';
-import { DossierTemplateData, GarantPDFData, DocumentType, DOCUMENT_SORT_ORDER, getHumanDocTitle, getExpectedDocTypes } from '@/lib/pdf/dossier-template';
+import { DossierTemplateData, GarantPDFData, DocumentType, DOCUMENT_SORT_ORDER, getHumanDocTitle } from '@/lib/pdf/dossier-template';
 import { randomBytes } from 'crypto';
 
 function normalizeName(s: string | null | undefined): string {
@@ -137,11 +137,9 @@ export async function POST(request: Request) {
 
     const prenom = normalizeName(mergedProfil.prenom);
 
-    // Types attendus selon le statut actuel — écarte les docs d'un statut précédent
-    const expectedTypes = getExpectedDocTypes(mergedProfil.situation_pro);
-
+    // Tous les documents uploadés — aucun filtre par type pour ne jamais en exclure
     const sortedDocuments = (documents || [])
-      .filter(doc => !!doc.fichier_path && expectedTypes.includes(doc.categorie ?? ''))
+      .filter(doc => !!doc.fichier_path)
       .sort((a, b) => {
         const orderA = DOCUMENT_SORT_ORDER[a.categorie ?? 'autre'] ?? 9;
         const orderB = DOCUMENT_SORT_ORDER[b.categorie ?? 'autre'] ?? 9;
@@ -190,10 +188,8 @@ export async function POST(request: Request) {
           .eq('user_id', user.id)
           .eq('garant_id', garant.id);
 
-        const expectedGarantTypes = getExpectedDocTypes(garant.situation_pro);
-
         const sortedGarantDocs = (garantDocs || [])
-          .filter(doc => !!doc.fichier_path && expectedGarantTypes.includes(doc.categorie ?? ''))
+          .filter(doc => !!doc.fichier_path)
           .sort((a, b) => {
             const orderA = DOCUMENT_SORT_ORDER[a.categorie ?? 'autre'] ?? 9;
             const orderB = DOCUMENT_SORT_ORDER[b.categorie ?? 'autre'] ?? 9;
