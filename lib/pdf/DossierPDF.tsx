@@ -10,7 +10,7 @@ import {
   Path,
   Rect,
 } from '@react-pdf/renderer'
-import type { DossierTemplateData, DossierDocument } from './dossier-template'
+import type { DossierTemplateData, DossierDocument, GarantPDFData } from './dossier-template'
 
 // Fonts intégrés — aucun réseau requis (Vercel-safe)
 const FONT = 'Helvetica'
@@ -337,6 +337,83 @@ const s = StyleSheet.create({
     color: C.brownLight,
   },
 
+  // Bandeau section garant
+  garantBand: {
+    backgroundColor: C.brownDark,
+    paddingHorizontal: 32,
+    paddingTop: 18,
+    paddingBottom: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  garantBandTitle: {
+    fontSize: 16,
+    fontFamily: FONT_BOLD,
+    color: C.white,
+    marginBottom: 3,
+  },
+  garantBandSub: {
+    fontSize: 8,
+    fontFamily: FONT,
+    color: C.beigeDark,
+  },
+  garantBandTag: {
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  garantBandTagText: {
+    fontSize: 8,
+    fontFamily: FONT_BOLD,
+    color: C.white,
+  },
+  garantInfoRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 28,
+    paddingTop: 18,
+    paddingBottom: 18,
+    gap: 8,
+  },
+  garantInfoCard: {
+    flex: 1,
+    backgroundColor: C.beigeLight,
+    borderWidth: 1,
+    borderColor: C.beigeDark,
+    borderRadius: 8,
+    padding: 12,
+  },
+  garantInfoLabel: {
+    fontSize: 6.5,
+    fontFamily: FONT_BOLD,
+    color: C.textMuted,
+    letterSpacing: 0.8,
+    marginBottom: 4,
+  },
+  garantInfoValue: {
+    fontSize: 12,
+    fontFamily: FONT_BOLD,
+    color: C.brownDark,
+  },
+  garantInfoSub: {
+    fontSize: 8,
+    fontFamily: FONT,
+    color: C.textMuted,
+    marginTop: 2,
+  },
+  garantTocHeader: {
+    paddingHorizontal: 28,
+    marginBottom: 8,
+  },
+  garantTocTitle: {
+    fontSize: 7.5,
+    fontFamily: FONT_BOLD,
+    color: C.brownMid,
+    letterSpacing: 0.8,
+    marginBottom: 6,
+  },
+
   // Corps document
   docBody: { paddingHorizontal: 28, paddingBottom: 72 },
   docImage: {
@@ -466,6 +543,149 @@ function DocPage({
   )
 }
 
+// ── Page d'intro de section garant ───────────────────────────────────────
+
+function GarantSectionPage({
+  garant,
+  locatairePrenom,
+  locataireNom,
+  pageNum,
+  totalPages,
+  reference,
+}: {
+  garant: GarantPDFData
+  locatairePrenom: string
+  locataireNom: string
+  pageNum: number
+  totalPages: number
+  reference: string
+}) {
+  const formatMoney = (n: number) =>
+    Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' €'
+
+  const loyerMax = garant.revenus_mensuels_nets
+    ? formatMoney(Math.round(garant.revenus_mensuels_nets / 3))
+    : null
+
+  return (
+    <Page size="A4" style={s.page}>
+      {/* Bande marron */}
+      <View style={s.garantBand}>
+        <View>
+          <Text style={s.garantBandTitle}>
+            {garant.prenom} {garant.nom.toUpperCase()}
+          </Text>
+          <Text style={s.garantBandSub}>
+            Garant{garant.lien ? ` · ${garant.lien}` : ''} de {locatairePrenom} {locataireNom}
+          </Text>
+        </View>
+        <View style={s.garantBandTag}>
+          <Text style={s.garantBandTagText}>GARANT</Text>
+        </View>
+      </View>
+
+      {/* Cartes récap */}
+      <View style={s.garantInfoRow}>
+        <View style={s.garantInfoCard}>
+          <Text style={s.garantInfoLabel}>SITUATION PROFESSIONNELLE</Text>
+          <Text style={s.garantInfoValue}>{garant.situation_professionnelle || '—'}</Text>
+        </View>
+        <View style={s.garantInfoCard}>
+          <Text style={s.garantInfoLabel}>REVENUS MENSUELS NETS</Text>
+          <Text style={s.garantInfoValue}>
+            {garant.revenus_mensuels_nets ? formatMoney(garant.revenus_mensuels_nets) : '—'}
+          </Text>
+          {loyerMax && (
+            <Text style={s.garantInfoSub}>Loyer max : {loyerMax} / mois</Text>
+          )}
+        </View>
+        <View style={s.garantInfoCard}>
+          <Text style={s.garantInfoLabel}>PIÈCES FOURNIES</Text>
+          <Text style={s.garantInfoValue}>{garant.documents.length}</Text>
+          <Text style={s.garantInfoSub}>document{garant.documents.length > 1 ? 's' : ''}</Text>
+        </View>
+      </View>
+
+      {/* Liste des pièces */}
+      <View style={s.garantTocHeader}>
+        <Text style={s.garantTocTitle}>PIÈCES JUSTIFICATIVES DU GARANT</Text>
+        {garant.documents.map((doc, i) => (
+          <View key={i} style={s.tocRow}>
+            <View style={s.tocLeft}>
+              <View style={[s.tocDot, { backgroundColor: C.success }]} />
+              <Text style={s.tocLabel}>{doc.label}</Text>
+            </View>
+            <Text style={s.tocPage}>p.{pageNum + 1 + i}</Text>
+          </View>
+        ))}
+        {garant.documents.length === 0 && (
+          <Text style={{ fontSize: 9, fontFamily: FONT, color: C.textMuted, marginTop: 6 }}>
+            Aucun document déposé pour ce garant.
+          </Text>
+        )}
+      </View>
+
+      <PageFooter reference={reference} current={pageNum} total={totalPages} />
+    </Page>
+  )
+}
+
+// ── Page document garant ──────────────────────────────────────────────────
+
+function GarantDocPage({
+  garant,
+  locatairePrenom,
+  locataireNom,
+  doc,
+  pageNum,
+  totalPages,
+  reference,
+}: {
+  garant: GarantPDFData
+  locatairePrenom: string
+  locataireNom: string
+  doc: DossierDocument
+  pageNum: number
+  totalPages: number
+  reference: string
+}) {
+  const imgSrc = doc.data_url?.startsWith('data:') ? doc.data_url : undefined
+
+  return (
+    <Page size="A4" style={s.page}>
+      <View style={s.header}>
+        <DrifyLogo fill={C.brownDark} door={C.beigeLight} markSize={18} fontSize={13} />
+        <Text style={s.headerRight}>
+          {garant.prenom} {garant.nom} · Garant de {locatairePrenom} {locataireNom}
+        </Text>
+      </View>
+
+      <View style={s.sectionBanner}>
+        <View style={s.sectionAccent} />
+        <View>
+          <Text style={s.sectionTitle}>{doc.label}</Text>
+          <Text style={s.sectionSubtitle}>
+            {garant.prenom} {garant.nom} — garant
+          </Text>
+        </View>
+      </View>
+
+      <View style={s.docBody}>
+        {imgSrc ? (
+          <Image src={imgSrc} style={s.docImage} />
+        ) : (
+          <View style={s.docPlaceholder}>
+            <Text style={s.docPlaceholderTitle}>Impossible d'afficher ce document</Text>
+            <Text style={s.docPlaceholderSub}>Format non supporté (JPG ou PNG requis)</Text>
+          </View>
+        )}
+      </View>
+
+      <PageFooter reference={reference} current={pageNum} total={totalPages} />
+    </Page>
+  )
+}
+
 // ── Document principal ────────────────────────────────────────────────────
 
 export function DossierPDF({ data }: { data: DossierTemplateData }) {
@@ -481,7 +701,15 @@ export function DossierPDF({ data }: { data: DossierTemplateData }) {
     ? formatMoney(Math.round(candidat.revenus_mensuels_nets / 3))
     : null
 
-  const totalPages = 1 + documents.length
+  // 1 couverture + docs locataire + pour chaque garant : 1 page intro + ses docs
+  const garantPages = (data.garants ?? []).reduce(
+    (acc, g) => acc + 1 + g.documents.length,
+    0
+  )
+  const totalPages = 1 + documents.length + garantPages
+
+  // Numéro de la première page garant (après couverture + docs locataire)
+  let nextGarantPageNum = 2 + documents.length
 
   return (
     <Document
@@ -584,7 +812,7 @@ export function DossierPDF({ data }: { data: DossierTemplateData }) {
         </View>
       </Page>
 
-      {/* ════════════════ PAGES DOCUMENTS ════════════════ */}
+      {/* ════════════════ PAGES DOCUMENTS LOCATAIRE ════════════════ */}
       {documents.map((doc, i) => (
         <DocPage
           key={`doc-${i}`}
@@ -594,6 +822,37 @@ export function DossierPDF({ data }: { data: DossierTemplateData }) {
           totalPages={totalPages}
         />
       ))}
+
+      {/* ════════════════ SECTIONS GARANTS ════════════════ */}
+      {(data.garants ?? []).map((garant, gi) => {
+        const sectionPage = nextGarantPageNum
+        nextGarantPageNum += 1 + garant.documents.length
+
+        return (
+          <React.Fragment key={`garant-${gi}`}>
+            <GarantSectionPage
+              garant={garant}
+              locatairePrenom={prenom}
+              locataireNom={nom}
+              pageNum={sectionPage}
+              totalPages={totalPages}
+              reference={dossier.reference}
+            />
+            {garant.documents.map((doc, di) => (
+              <GarantDocPage
+                key={`garant-${gi}-doc-${di}`}
+                garant={garant}
+                locatairePrenom={prenom}
+                locataireNom={nom}
+                doc={doc}
+                pageNum={sectionPage + 1 + di}
+                totalPages={totalPages}
+                reference={dossier.reference}
+              />
+            ))}
+          </React.Fragment>
+        )
+      })}
     </Document>
   )
 }

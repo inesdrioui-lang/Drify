@@ -2,6 +2,15 @@
 // Rendu par Puppeteer (headless Chrome) → format A4
 // Inspiré de DossierFacile, aux couleurs Drify
 
+export interface GarantPDFData {
+  prenom: string
+  nom: string
+  lien?: string
+  situation_professionnelle: string
+  revenus_mensuels_nets: number
+  documents: DossierDocument[]
+}
+
 export interface DossierTemplateData {
   candidat: {
     prenom: string
@@ -22,6 +31,7 @@ export interface DossierTemplateData {
     score_confiance?: number
   }
   documents: DossierDocument[]
+  garants?: GarantPDFData[]
 }
 
 export interface DossierDocument {
